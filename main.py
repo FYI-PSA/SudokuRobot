@@ -205,6 +205,10 @@ async def error_handler(update, context):
         print('\n\n')
 
 
+async def await_run_polling(application, event_loop):
+    await application.run_polling()
+
+
 def main(token, adminid):
     time.sleep(0.1)
     
@@ -231,9 +235,8 @@ def main(token, adminid):
 
     event_loop.run_until_complete(notifystart(application, adminid))
     while True:
-        application.run_polling()
+        event_loop.run(await_run_polling(application, event_loop))
         print("Mainloooop...")
-    
     sock_listener_thread.join()
 
 
