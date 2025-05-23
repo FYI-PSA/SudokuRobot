@@ -69,6 +69,7 @@ from http import HTTPStatus
 from telegram import Update, InputFile, InputMediaPhoto
 from telegram.error import Conflict
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
+import gc
 
 
 def bind_port():
@@ -124,15 +125,7 @@ async def help(update, context):
     print(f"User info:\n{user_profile}")
 
 
-tf_is_annoying = True
-i = 0
-while tf_is_annoying and i < 50:
-    try:
-        import servermain
-        tf_is_annoying = False
-    except Exception as e:
-        print(f"{i} tf is annoying. {e}")
-    i += 1
+import servermain
 
 
 def get_or_create_eventloop():
@@ -169,7 +162,6 @@ async def process_image(update, context):
     print("yay i passed the server thing")
     if success and (possible_err_name is None):
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Excellent", reply_to_message_id=update.message.message_id)
-        pass
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"<b>I can't solve this.</b>\n\n{possible_err_details}", reply_to_message_id=update.message.message_id, parse_mode='HTML')
         print(f"User: {update.message.from_user.username}   |   Failed: {possible_err_name}: {possible_err_line} : {possible_err_details}")
@@ -182,6 +174,7 @@ async def process_image(update, context):
     mediagroup = [InputMediaPhoto(media=solvedimg), InputMediaPhoto(media=solvedgrd)]
     await context.bot.send_media_group(chat_id=update.effective_chat.id, media=mediagroup, caption="Solved!\nHere's the solved puzzle placed inside the original image, alongside a high quality image of only the solved grid.")
     print(f"User: {update.message.from_user.username}   |   File name: {img_file_name}   |   Grid: {solved_grid}")
+    gc.collect()
 
 
 async def save_attachment_to_file(update, context):
