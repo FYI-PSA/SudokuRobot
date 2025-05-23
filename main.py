@@ -106,6 +106,10 @@ async def start(update, context):
     print(f"User info:\n{user_profile}")
 
 
+async def notifystart(app, adminid):
+    await app.bot.send_message(chat_id=adminid, text="The bot has started!")
+
+
 async def help(update, context):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=f"If the bot stops working, you should quickly visit\nhttps://sudokurobot.onrender.com/\nJust load the site, you don't need to stay on that page\nThen wait for around 1 minute and the bot will be working.")
     await context.bot.send_message(chat_id=update.effective_chat.id, text="Send me a screenshot or any other image of a Sudoku puzzle!")
@@ -201,7 +205,7 @@ def main(token, adminid):
 
     application.add_error_handler(error_handler)
 
-    await application.bot.send_message(chat_id=adminid, text="The bot has started!")
+    asyncio.run(notifystart(application, adminid))
     while True:
         application.run_polling()
         print("Mainloooop...")
