@@ -163,9 +163,18 @@ async def process_image(update, context):
     time.sleep(1)
     img_file_name = str(img_file_name)
     print(f"Saved the file as {img_file_name}")
-    
-    (success, solvedgridfilename, solvedimagefilename, solved_grid, possible_err_details, possible_err_name, possible_err_line) = servermain.servermain(AImodel=AImodel, filename=img_file_name, predict_grayscale_fun=predict_grayscale_func)
-    
+    (success,
+     solvedgridfilename,
+     solvedimagefilename,
+     solved_grid,
+     possible_err_details,
+     possible_err_name,
+     possible_err_line ) = servermain.servermain(
+         AImodel=AImodel,
+         filename=img_file_name,
+         predict_grayscale_func=predict_grayscale_func
+     )
+
     print("yay i passed the server thing!")
     
     if success and (possible_err_name is None):
