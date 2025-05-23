@@ -182,7 +182,7 @@ async def error_handler(update, context):
         print('\n\n')
 
 
-def main(token):
+def main(token, adminid):
     time.sleep(0.1)
     
     sock = bind_port()
@@ -203,24 +203,32 @@ def main(token):
     application.add_handler(image_handler)
 
     application.add_error_handler(error_handler)
+
+     application.bot.send_message(chat_id=update.effective_chat.id, text)
+    while True:
+        application.run_polling()
+        print("Mainloooop...")
     
-    application.run_polling()
     sock_listener_thread.join()
 
 
 if __name__ == '__main__':
     try:
-        token = os.getenv('BOT_TOKEN')  # github secrets
+        token = str(str(os.getenv('BOT_TOKEN')).strip())  # github secrets
+        adminid = int(str(os.getenc('ADMIN_ID')).strip())
         if token is None:
-            with open('/etc/secrets/TOKEN.txt', 'r') as file:
+            with open('/etc/secrets/BOT_TOKEN.txt', 'r') as file:
                 token = file.read().strip()
+        if adminid is None:
+            with open('/etc/secrets/ADMIN_ID.txt', 'r') as file:
+                adminid = int(file.read().strip())
     except:
-        raise Exception("Token not found. Either set BOT_TOKEN in environment, or have the /etc/secrets/TOKEN.txt file.")
-    while True:
-        try:
-            main(token)
-            print("Mainloop looped.")
-        except Exception as e:
-            print("Generic exception? I don't know how to handle that.")
-            print(e)
-            exit(1)
+        raise Exception("Token or Admin's ID not found. Either set BOT_TOKEN / ADMIN_ID in environment, or have the BOT_TOKEN.txt or ADMIN_ID.txt file in /etc/secrets/")
+    try:
+        main(token, adminid)
+        print("Mainloop looped.")
+        exit(0)
+    except Exception as e:
+        print("Generic exception? I don't know how to handle that.")
+        print(e)
+        exit(1)
