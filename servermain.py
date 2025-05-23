@@ -1,6 +1,6 @@
 import os
 import sys
-import copy
+from copy import deepcopy
 import math
 import time
 from collections import Counter
@@ -74,18 +74,18 @@ ALL = set(range(1, M+1))
 CHECK_CELLS = [(0, 0), (1, 3), (2, 6), (3, 1), (4, 4), (5, 7), (6, 2), (7, 5), (8, 8)]  # Definitely mathematically reduntant and can be reduced.
 # I don't want to do that though, too lazy. Deal with it, it's not slow enough to care about.
 GRID = list([[0 for _ in range(M)] for _ in range(M)])
-EMPTYGRID = copy.deepcopy(GRID)
+EMPTYGRID = deepcopy(GRID)
 
 
 def SolveByGrid(base) -> tuple:  # takes a base grid and tries to solve for lonely items. returns a candidate-filled kinda-solved grid and the normal kinda-solved grid
     global ALL
-    grid = copy.deepcopy(base)
-    candid = copy.deepcopy(grid)
+    grid = deepcopy(base)
+    candid = deepcopy(grid)
     for i, row in enumerate(grid):
         for j, item in enumerate(row):
             if item == 0:
                 temp_ = row
-                neighbours = copy.deepcopy(temp_)
+                neighbours = deepcopy(temp_)
                 temp_ = [_r[j] for _r in grid]
                 neighbours.extend(temp_)
                 box_i = i // 3
@@ -108,8 +108,8 @@ def SolveByGrid(base) -> tuple:  # takes a base grid and tries to solve for lone
 
 def SolveByCandid(candidbase, gridbase) -> list:  # takes a candidate-containing grid and the normal grid and tries to solve based on being the only candidate for a number in a set. returns a kinda-solved normal grid
     global ALL
-    candid = copy.deepcopy(candidbase)
-    grid = copy.deepcopy(gridbase)
+    candid = deepcopy(candidbase)
+    grid = deepcopy(gridbase)
     for i, row in enumerate(candid):
         for j, item in enumerate(row):
             if not isinstance(item, int):
@@ -143,25 +143,25 @@ def SolveByCandid(candidbase, gridbase) -> list:  # takes a candidate-containing
 
 def SimpleSolve(gridbase) -> tuple:  # takes a normal unsolved grid, and tries to solve it using the two functions above. returns a potentially condidate-containing grid and a potentially solved grid.
     global EMPTYGRID
-    grid = copy.deepcopy(gridbase)
-    candid = copy.deepcopy(grid)
-    copygrid = copy.deepcopy(EMPTYGRID)
-    copycandid = copy.deepcopy(EMPTYGRID)
-    copytotal = copy.deepcopy(EMPTYGRID)
+    grid = deepcopy(gridbase)
+    candid = deepcopy(grid)
+    copygrid = deepcopy(EMPTYGRID)
+    copycandid = deepcopy(EMPTYGRID)
+    copytotal = deepcopy(EMPTYGRID)
     firsttotal = True
     firstgrid = True
     firstcandid = True
     while copytotal != grid or firsttotal:
         firsttotal = False
-        copytotal = copy.deepcopy(grid)
+        copytotal = deepcopy(grid)
         while copygrid != grid or firstgrid:
             firstgrid = False
-            copygrid = copy.deepcopy(grid)
+            copygrid = deepcopy(grid)
             candid, grid = SolveByGrid(grid)
         # runs until SolveByGrid doesn't change grid
         while copycandid != grid or firstcandid:
             firstcandid = False
-            copycandid = copy.deepcopy(grid)
+            copycandid = deepcopy(grid)
             grid = SolveByCandid(candid, grid)
         # runs until SolveByCandid doesn't change grid
         candid, grid = SolveByGrid(grid)
@@ -184,18 +184,18 @@ def GuessworkSolve(gridbase, debug=False) -> tuple:  # solves the grid by trying
             if not isinstance(candidatestr, str):
                 if debug:
                     print(colored("[#] *BEEP*! Reached a wrong answer, sorry!", "magenta"))
-                return (False, copy.deepcopy(grid))
+                return (False, deepcopy(grid))
             candidates = breakdowntoset(candidatestr)
 
             # if len(candidates) == 0:  # I'm pretty sure this is impossible because if a set is of length less than one, the SolveByGrid doesn't assign it a candidate string, but leaves it as 0.
             #     if debug:  # But I'm still keeping this code in case I accidentally change something about that.
             #         print(colored("[#] *BEEP*! Reached a wrong answer, sorry!", "magenta"))  # This is definitely a sign of bad coding (lol): uncertainty of input type.
-            #     return (False, copy.deepcopy(grid))
+            #     return (False, deepcopy(grid))
 
             for r_ in candid:  # Prevent the code from going down a spiral when already a grid is definitely unsolvable.
                 for j_ in r_:
                     if j_ == 0:
-                        return (False, copy.deepcopy(grid))
+                        return (False, deepcopy(grid))
 
             candidates = list(candidates)
             candidates.sort()
@@ -203,7 +203,7 @@ def GuessworkSolve(gridbase, debug=False) -> tuple:  # solves the grid by trying
             # a number on the grid is missing, and it has possible values as ints in an ordered list from small to large.
             for p in candidates:
                 testgrid = []
-                testgrid = copy.deepcopy(grid)
+                testgrid = deepcopy(grid)
                 testgrid[i][j] = p
                 couldbesolved, answer = GuessworkSolve(testgrid, debug=debug)
                 if couldbesolved and CheckValidGrid(answer):
@@ -211,17 +211,17 @@ def GuessworkSolve(gridbase, debug=False) -> tuple:  # solves the grid by trying
             # it's impossible for it not to be one of the values that are possible for a number, so if reaching this point, automatically assume failure.
             if debug:
                 print(colored("[#] Assuming failure.", "magenta"))
-            return (False, copy.deepcopy(grid))
-    return (CheckValidGrid(grid), copy.deepcopy(grid))
+            return (False, deepcopy(grid))
+    return (CheckValidGrid(grid), deepcopy(grid))
 
 
 def CheckValidGrid(gridbase) -> bool:  # takes a solved or an unsolved grid and checks each row and column and box only once (9 total tiles) (using some tile coordinates written in the constants) for repeating numbers. returns True if no repeats and False if the grid was solved incorrectly.
     global CHECK_CELLS
-    grid = copy.deepcopy(gridbase)
+    grid = deepcopy(gridbase)
     for i, j in CHECK_CELLS:
         row = gridbase[i]
         item = row[j]
-        row_neigh = [n for n in copy.deepcopy(row) if n != 0]
+        row_neigh = [n for n in deepcopy(row) if n != 0]
         col_neigh = [_r[j] for _r in grid if _r[j] != 0]
         box_i = i // 3
         box_j = j // 3
@@ -254,12 +254,12 @@ def read_gridjpg_to_grid(kerasmodel, filename, grayscale_numpy_tiles_list_to_pre
         print(colored("[>] Returning an empty grid just for fun, while you go get your image.", "yellow"))
         print(colored("[>] No need to close the program; Just press the Enter key again and I'll process your image for you once you place it here.", "yellow"))
         raise Exception(f"Image file not found? Why? filename: {filename}, dir: {os.getcwd()}, ls: {os.listdir(os.getcwd())}")
-        return (copy.deepcopy(EMPTYGRID))
+        return (deepcopy(EMPTYGRID))
     tile_images = sudokuimagetool.process_image_file_to_list_of_polished_np_tiles(filename=filename)
     tiles = grayscale_numpy_tiles_list_to_predicted_integer_list(tiles=tile_images, model=kerasmodel)
     # print(tiles)
     grid = [tiles[i:i + 9] for i in range(0, 81, 9)]
-    return (copy.deepcopy(grid))
+    return (deepcopy(grid))
 
 
 def write_grid_to_gridjpg(tiles_list: list, ogfilename: str, solvedfilename: str, gridname: str):
@@ -299,7 +299,7 @@ def main(model, filename, predict_grayscale_func) -> int:  # main thing with all
 def servermain(filename, AImodel, predict_grayscale_func):
     print('entering servermain')
     global GRID, EMPTYGRID
-    GRID = copy.deepcopy(EMPTYGRID)
+    GRID = deepcopy(EMPTYGRID)
     filename = str(filename)
     name, ext = map(str, getfilenameinfo(filename))
     gridname = str(f"{name}_solved_grid.{ext}")
@@ -310,7 +310,7 @@ def servermain(filename, AImodel, predict_grayscale_func):
         print('got a result')
     except Exception as err_message:
         print('got an error')
-        return (False, gridname, solvedname, copy.deepcopy(GRID), str(err_message), type(err_message).__name__, sys.exc_info()[-1].tb_lineno)
+        return (False, gridname, solvedname, deepcopy(GRID), str(err_message), type(err_message).__name__, sys.exc_info()[-1].tb_lineno)
     if res != 0:
         print('got no result but no error')
         err_message_md: str = ("There's an error in one of the following:  \n"
