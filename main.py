@@ -212,7 +212,7 @@ def main(token, adminid):
 if __name__ == '__main__':
     try:
         token = str(str(os.getenv('BOT_TOKEN')).strip())  # github secrets
-        adminid = int(str(os.getenc('ADMIN_ID')).strip())
+        adminid = int(str(os.getenv('ADMIN_ID')).strip())
         if token is None:
             with open('/etc/secrets/BOT_TOKEN.txt', 'r') as file:
                 token = file.read().strip()
