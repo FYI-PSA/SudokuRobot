@@ -10,6 +10,8 @@ print = logging.info
 
 import os, sys, subprocess
 import psutil
+
+
 print("NUCLEAR MODE. WILL KILL ANY OTHER RUNNING PYTHON INSTANCE.")
 me = os.getpid()
 if os.name == 'nt':
@@ -59,6 +61,7 @@ import socket
 import threading
 import requests
 import time
+import asyncio
 from http import HTTPStatus
 from telegram import Update, InputFile, InputMediaPhoto
 from telegram.error import Conflict
