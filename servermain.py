@@ -10,8 +10,10 @@ from collections import Counter
 import tilereader
 import sudokuimagetool
 
+
 import logging
 print=logging.info
+
 
 def getfilenameinfo(fname: str) -> tuple:
     filename = str(fname)
