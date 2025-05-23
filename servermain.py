@@ -174,7 +174,7 @@ def GuessworkSolve(gridbase, debug=False) -> tuple:  # solves the grid by trying
         return (False, grid)
     if debug:
         print(colored("[#] Debug turn:\n", "light_yellow"))
-        gridprint(candid)
+        # gridprint(candid)
         print("")
     for i, row in enumerate(grid):
         for j, item in enumerate(row):
@@ -273,7 +273,7 @@ def main(model, filename) -> int:  # main thing with all of the main UX and styl
     st = time.time()
     print("\n")
     print(colored("Unsolved Grid:\n", "blue"))
-    gridprint(GRID)
+    # gridprint(GRID)
     print("\n")
     couldbesolved, GRID = GuessworkSolve(GRID, debug=False)  # no debug
     et = time.time()
@@ -288,7 +288,7 @@ def main(model, filename) -> int:  # main thing with all of the main UX and styl
         return 1
     print("\n")
     print(colored("Solved Grid:\n", "green"))
-    gridprint(GRID)
+    # gridprint(GRID)
     print("\n")
     return 0
 
