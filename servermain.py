@@ -246,7 +246,7 @@ def CheckValidGrid(gridbase) -> bool:  # takes a solved or an unsolved grid and 
     return True
 
 
-def read_gridjpg_to_grid(kerasmodel, filename) -> list:
+def read_gridjpg_to_grid(kerasmodel, filename, grayscale_numpy_tiles_list_to_predicted_integer_list=predict_grayscale_func) -> list:
     global EMPTYGRID
     current_directory_files = [str(f) for f in os.listdir(os.getcwd())]
     if not (str(filename) in current_directory_files):
@@ -256,7 +256,7 @@ def read_gridjpg_to_grid(kerasmodel, filename) -> list:
         raise Exception(f"Image file not found? Why? filename: {filename}, dir: {os.getcwd()}, ls: {os.listdir(os.getcwd())}")
         return (copy.deepcopy(EMPTYGRID))
     tile_images = sudokuimagetool.process_image_file_to_list_of_polished_np_tiles(filename=filename)
-    tiles = tilereader.grayscale_numpy_tiles_list_to_predicted_integer_list(tiles=tile_images, model=kerasmodel)
+    tiles = grayscale_numpy_tiles_list_to_predicted_integer_list(tiles=tile_images, model=kerasmodel)
     # print(tiles)
     grid = [tiles[i:i + 9] for i in range(0, 81, 9)]
     return (copy.deepcopy(grid))
@@ -271,9 +271,9 @@ def write_grid_to_gridjpg(tiles_list: list, ogfilename: str, solvedfilename: str
     print("saved grid on the original image")
 
 
-def main(model, filename) -> int:  # main thing with all of the main UX and styling going on. gets the time to solve, solves the grid, returns.
+def main(model, filename, predict_grayscale_func) -> int:  # main thing with all of the main UX and styling going on. gets the time to solve, solves the grid, returns.
     global GRID
-    GRID = read_gridjpg_to_grid(filename=filename, kerasmodel=model)
+    GRID = read_gridjpg_to_grid(filename=filename, kerasmodel=model, grayscale_numpy_tiles_list_to_predicted_integer_list=predict_grayscale_func)
     st = time.time()
     print("\n")
     print(colored("Unsolved Grid:\n", "blue"))
@@ -296,7 +296,7 @@ def main(model, filename) -> int:  # main thing with all of the main UX and styl
     print("\n")
     return 0
 
-def servermain(filename, AImodel):
+def servermain(filename, AImodel, predict_grayscale_func):
     print('entering servermain')
     global GRID, EMPTYGRID
     GRID = deepcopy(EMPTYGRID)
@@ -306,7 +306,7 @@ def servermain(filename, AImodel):
     solvedname = str(f"{name}_solved.{ext}")
     print(f'name {name} ext {ext} gridname {gridname} solvedname {solvedname}')
     try:
-        res = main(model=AImodel, filename=filename)
+        res = main(model=AImodel, filename=filename, predict_grayscale_func=predict_grayscale_func)
         print('got a result')
     except Exception as err_message:
         print('got an error')
