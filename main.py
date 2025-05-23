@@ -122,12 +122,14 @@ async def help(update, context):
 
 
 tf_is_annoying = True
-while tf_is_annoying:
+i = 0
+while tf_is_annoying and i < 50:
     try:
         import servermain
         tf_is_annoying = False
-    except:
-        print("tf is annoying.")
+    except Exception as e:
+        print(f"{i} tf is annoying. {e}")
+    i += 1
 
 
 def get_or_create_eventloop():
