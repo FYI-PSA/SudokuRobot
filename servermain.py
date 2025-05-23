@@ -1,7 +1,8 @@
 import os
 import sys
-os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"  # more precise floating point calculations, more precise model output
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # disables warnings and debugging information (it's fine) but still gives errors
+# os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"  # more precise floating point calculations, more precise model output
+# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # disables warnings and debugging information (it's fine) but still gives errors
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import copy
 import math
 import time
