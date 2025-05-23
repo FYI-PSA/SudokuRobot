@@ -5,6 +5,10 @@ from copy import deepcopy
 # from matplotlib import pyplot as plt
 
 
+import logging
+print = logging.info
+
+
 class plot():
     def __init__(self):
         pass
