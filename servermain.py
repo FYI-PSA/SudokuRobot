@@ -334,7 +334,7 @@ def servermain(filename):
     print(f'desolved grid to {solved_tiles}')
     GRID = copy.deepcopy(solved_tiles)
     write_grid_to_gridjpg(solved_tiles, filename, solvedname, gridname)   
-    print('going home...'
+    print('going home...')
     return (True, gridname, solvedname, copy.deepcopy(GRID), None, None, None)
 
 
