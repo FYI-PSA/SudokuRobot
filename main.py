@@ -124,7 +124,7 @@ async def notifystart(app, adminid):
 
 
 async def help(update, context):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"If the bot stops working, you should quickly visit\nhttps://sudokurobot.onrender.com/\nJust load the site, you don't need to stay on that page\nThen wait for around 1 minute and the bot will be working.")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"If the bot stops working, you should quickly visit\nhttps://sudokurobot.onrender.com/\nThen wait for around 1 minute and the bot will be working. (The page will reload when the bot stats working)")
     await context.bot.send_message(chat_id=update.effective_chat.id, text="Send me a screenshot or any other image of a Sudoku puzzle!")
     user = update.message.from_user
     user_profile = f'Name: {user.first_name} - {user.last_name}   |   Username: {user.username}   |   Id: {user.id}'
@@ -256,7 +256,7 @@ def main(token, adminid):
     application.run_polling()
     
     print("Mainloooop... died... sigterm...")
-    stop_listening = False
+    stop_listening = True
     sock_listener_thread.join()
     return
 
