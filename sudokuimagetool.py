@@ -6,13 +6,13 @@ from copy import deepcopy
 
 
 class plot():
-    def self.__init__(self):
+    def __init__(self):
         pass
-    def self.title(self, string):
+    def title(self, string):
         pass
-    def self.imshow(self, img, cmap=''):
+    def imshow(self, img, cmap=''):
         pass
-    def self.show(self):
+    def show(self):
         pass
 plt = plot()
 
