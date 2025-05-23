@@ -86,9 +86,14 @@ def bind_port():
     return sock
 
 
+global stop_listening
+stop_listening = False
+
+
 def sock_listener(sock):
+    global stop_listening
     print('Listener on the socket is starting now.')
-    while not sock._closed:
+    while (not sock._closed) and (not stop_listening):
         sock.listen(10)
         connection, address = sock.accept()
         with connection:
@@ -223,6 +228,7 @@ async def error_handler(update, context):
 
 
 def main(token, adminid):
+    global stop_listening
     time.sleep(0.1)
     
     sock = bind_port()
@@ -249,8 +255,10 @@ def main(token, adminid):
     event_loop.run_until_complete(notifystart(application, adminid))
     application.run_polling()
     
-    print("Mainloooop... died??? HOW!?")
+    print("Mainloooop... died... sigterm...")
+    stop_listening = False
     sock_listener_thread.join()
+    return
 
 
 if __name__ == '__main__':
