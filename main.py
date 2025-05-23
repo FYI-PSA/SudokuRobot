@@ -201,7 +201,7 @@ def main(token, adminid):
 
     application.add_error_handler(error_handler)
 
-    application.bot.send_message(chat_id=adminid, text="The bot has started!")
+    await application.bot.send_message(chat_id=adminid, text="The bot has started!")
     while True:
         application.run_polling()
         print("Mainloooop...")
