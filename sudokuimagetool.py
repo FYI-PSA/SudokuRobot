@@ -2,7 +2,19 @@ import numpy as np
 from PIL import Image, ImageOps
 import cv2
 from copy import deepcopy
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
+
+
+class plot():
+    def __init__(self):
+        pass
+    def self.title(self, string):
+        pass
+    def self.imshow(self, img, cmap=''):
+        pass
+    def self.show(self):
+        pass
+plt = plot()
 
 
 # def grayscale_to_binary(image: np.ndarray, debug: bool = False, thresh: float = 0.3):
