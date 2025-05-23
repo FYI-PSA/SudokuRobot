@@ -165,13 +165,11 @@ async def process_image(update, context):
     time.sleep(1)
     img_file_name = str(img_file_name)
     (success, solvedgridfilename, solvedimagefilename, solved_grid, possible_err_details, possible_err_name, possible_err_line) = servermain.servermain(img_file_name)
+    print("yay i passed the server thing")
     if success and (possible_err_name is None):
-        # await context.bot.send_message(chat_id=update.effective_chat.id, text="Excellent", reply_to_message_id=update.message.message_id)
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="Excellent", reply_to_message_id=update.message.message_id)
         pass
     else:
-        # await context.bot.send_message(chat_id=update.effective_chat.id, text=f"I can't solve this.<br>{possible_err_details}", reply_to_message_id=update.message.message_id, parse_mode='MarkdownV2')
-        # await context.bot.send_message(chat_id=update.effective_chat.id, text=f"I can't solve this.  \n{possible_err_details}", reply_to_message_id=update.message.message_id, parse_mode='Markdown')
-        # await context.bot.send_message(chat_id=update.effective_chat.id, text=f"<b>I can't solve this.</b><br>{possible_err_details}", reply_to_message_id=update.message.message_id, parse_mode='HTML')
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"<b>I can't solve this.</b>\n\n{possible_err_details}", reply_to_message_id=update.message.message_id, parse_mode='HTML')
         print(f"User: {update.message.from_user.username}   |   Failed: {possible_err_name}: {possible_err_line} : {possible_err_details}")
         raise Exception(f"{possible_err_name} : {possible_err_line} : {possible_err_details}")
