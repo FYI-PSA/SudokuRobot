@@ -127,8 +127,8 @@ async def help(update, context):
 
 
 import servermain
-import tilereader
-AImodel = tilereader.load_model()
+from tilereader import grayscale_numpy_tiles_list_to_predicted_integer_list as predict_grayscale_func, load_model as load_model
+AImodel = load_model()
 print('ai model loaded.')
 
 
@@ -156,36 +156,40 @@ async def echo(update, context):
 
 
 async def process_image(update, context):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="Solving... (Please wait, this may take up to a minute depending on the load on the server...)", reply_to_message_id=update.message.message_id)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="Solving...\nPlease wait, this may take up to a minute depending on the load on the server...", reply_to_message_id=update.message.message_id)
     print("Brb...")
+    
     img_file_name = await save_attachment_to_file(update, context)
     time.sleep(1)
-    print(f"Saved the file as {img_file_name}")
     img_file_name = str(img_file_name)
-    (success, solvedgridfilename, solvedimagefilename, solved_grid, possible_err_details, possible_err_name, possible_err_line) = servermain.servermain(AImodel=AImodel, filename=img_file_name)
+    print(f"Saved the file as {img_file_name}")
+    
+    (success, solvedgridfilename, solvedimagefilename, solved_grid, possible_err_details, possible_err_name, possible_err_line) = servermain.servermain(AImodel=AImodel, filename=img_file_name, predict_grayscale_fun=predict_grayscale_func)
+    
     print("yay i passed the server thing!")
+    
     if success and (possible_err_name is None):
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Excellent", reply_to_message_id=update.message.message_id)
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"<b>I can't solve this.</b>\n\n{possible_err_details}", reply_to_message_id=update.message.message_id, parse_mode='HTML')
+        
         print(f"User: {update.message.from_user.username}   |   Failed: {possible_err_name}: {possible_err_line} : {possible_err_details}")
+        
         raise Exception(f"{possible_err_name} : {possible_err_line} : {possible_err_details}")
         return
+        
     with open(solvedimagefilename, 'rb') as img_file:
         solvedimg = img_file.read()
     with open(solvedgridfilename, 'rb') as grd_file:
         solvedgrd = grd_file.read()
     mediagroup = [InputMediaPhoto(media=solvedimg), InputMediaPhoto(media=solvedgrd)]
     await context.bot.send_media_group(chat_id=update.effective_chat.id, media=mediagroup, caption="Solved!\nHere's the solved puzzle placed inside the original image, alongside a high quality image of only the solved grid.")
+    
     print(f"User: {update.message.from_user.username}   |   File name: {img_file_name}   |   Grid: {solved_grid}")
     gc.collect()
-    print(os.listdir(os.getcwd()))
     os.remove(solvedgridfilename)
     os.remove(solvedimagefilename)
     os.remove(img_file_name)
-    os.system('rm *.jpg')
-    os.system('rm *.png')
-    print(os.listdir(os.getcwd()))
 
 
 async def save_attachment_to_file(update, context):
