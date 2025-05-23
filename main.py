@@ -218,16 +218,21 @@ def main(token, adminid):
 
 if __name__ == '__main__':
     try:
-        token = str(str(os.getenv('BOT_TOKEN')).strip())  # github secrets
-        adminid = int(str(os.getenv('ADMIN_ID')).strip())
+        token = os.getenv('BOT_TOKEN') # github secrets
+        adminid = os.getenv('ADMIN_ID')
         if token is None:
             with open('/etc/secrets/BOT_TOKEN.txt', 'r') as file:
                 token = file.read().strip()
         if adminid is None:
             with open('/etc/secrets/ADMIN_ID.txt', 'r') as file:
-                adminid = int(file.read().strip())
+                adminid = file.read().strip()
     except:
         raise Exception("Token or Admin's ID not found. Either set BOT_TOKEN / ADMIN_ID in environment, or have the BOT_TOKEN.txt or ADMIN_ID.txt file in /etc/secrets/")
+    try:
+        adminid = int(str(adminid).strip())
+        token = str(token).strip()
+    except:
+        raise Exception("Wrong type!! Admin's ID is supposed to be the integer user ID")
     try:
         main(token, adminid)
         print("Mainloop looped.")
