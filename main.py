@@ -132,14 +132,17 @@ while tf_is_annoying:
 
 def get_or_create_eventloop():
     try:
+        print("Creating new loop...")
         return asyncio.get_event_loop()
-    except RuntimeError as ex:
-        if "no current event loop" in str(ex):
+    except Exception as e:
+        print("Caught one: {e}")
+        if "no current event loop" in str(e):
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             return asyncio.get_event_loop()
         else:
-          raise ex
+            print("failure...")
+            raise ex
 
 
 async def echo(update, context):
@@ -222,7 +225,7 @@ def main(token, adminid):
 
     application.add_error_handler(error_handler)
 
-    asyncio.run(notifystart(application, adminid))
+    event_loop.run_until_complete(notifystart(application, adminid))
     while True:
         application.run_polling()
         print("Mainloooop...")
