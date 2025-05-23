@@ -302,14 +302,32 @@ def servermain(filename):
     except Exception as err_message:
         return (False, gridname, solvedname, copy.deepcopy(GRID), str(err_message), type(err_message).__name__, sys.exc_info()[-1].tb_lineno)
     if res != 0:
-        err_message: str = ("There's an error in one of the following:  \n"
+        err_message_md: str = ("There's an error in one of the following:  \n"
                             "- **The image quality**  \n"
                             "    > Try sending a clearer picture, more zoomed in and clearer digits, and an obvious square grid with visibly distinct edges in the image.  \n"
                             "- **The puzzle configuration**  \n"
                             "    > If you still face this message after the previous step, check the validty of your puzzle.  \n"
                             "- **The program**  \n"
                             "    > If your image and puzzle are both correct and visible, report this issue to the admin on Telegram: [@FYI-PSA](https://t.me/FYI-PSA/)")
-        return(False, gridname, solvedname, copy.deepcopy(GRID), str(err_message), 'CouldNotBeSolved', 309)
+        err_message_html: str = ("There's an error in one of the following:<br><br>"
+                            "<ul>"
+                            "- <li><b>The image quality</b><br>"
+                            "    <blockquote> Try sending a clearer picture, more zoomed in and clearer digits, and an obvious square grid with visibly distinct edges in the image. </blockquote><br><br>"
+                            "- <li><b>The puzzle configuration</b><br>"
+                            "    <blockquote> If you still face this message after the previous step, check the validty of your puzzle. </blockquote><br><br>"
+                            "- <li><b>The program</b><br>"
+                            "    <blockquote> If your image and puzzle are both correct and visible, report this issue to the admin on Telegram: <a href='https://t.me/FYI-PSA/'>@FYI-PSA</a> </blockquote><br>"
+                            "</ul>")            
+        h: str= "There's an error in one of the following:<br>"
+                            "<ul>"
+                            "<li><strong>The image quality</strong><br>"
+                            "Try sending a clearer picture, more zoomed in and clearer digits, and an obvious square grid with visibly distinct edges in the image.</li>"
+                            "<li><strong>The puzzle configuration</strong><br>"
+                            "If you still face this message after the previous step, check the validity of your puzzle.</li>"
+                            "<li><strong>The program</strong><br>"
+                            "If your image and puzzle are both correct and visible, report this issue to the admin on Telegram <a href='https://t.me/FYI-PSA'>@FYI-PSA</a>.</li>"
+                            "</ul>"
+        return(False, gridname, solvedname, copy.deepcopy(GRID), str(err_message_html), 'CouldNotBeSolved', 309)
     solved_tiles = []
     for row in GRID:
         solved_tiles.extend(row)
