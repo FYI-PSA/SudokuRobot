@@ -50,7 +50,6 @@ def exit_handler():
         os.remove(KEY)
     else:
         print(f"no lock while quitting.")
-    print("goodnight princess!!!!!!!\n\n\n")
 
 
 atexit.register(exit_handler)
@@ -166,9 +165,10 @@ async def error_handler(update, context):
         time.sleep(10)
         print("Is the conflict persisting after this?\n")
     else:
-        logging.info('\n')
-        logging.error(f"An unexpected exception, you should investigate: {err}")
-        logging.info('\n')
+        logging.info('\n\n')
+        logging.error(f"An unexpected exception, you should investigate: {err}") 
+        logging.info(f"Error line: {sys.exc_info()[-1].tb_lineno}")
+        logging.info('\n\n')
 
 
 def main(token):
@@ -204,7 +204,7 @@ if __name__ == '__main__':
             with open('/etc/secrets/TOKEN.txt', 'r') as file:
                 token = file.read().strip()
     except:
-        raise Exception("token not found. either set BOT_TOKEN in environment, or have the /etc/secrets/TOKEN.txt file.")
+        raise Exception("Token not found. Either set BOT_TOKEN in environment, or have the /etc/secrets/TOKEN.txt file.")
     while True:
         try:
             main(token)
