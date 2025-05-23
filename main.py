@@ -159,7 +159,7 @@ async def process_image(update, context):
     print(f"Saved the file as {img_file_name}")
     img_file_name = str(img_file_name)
     (success, solvedgridfilename, solvedimagefilename, solved_grid, possible_err_details, possible_err_name, possible_err_line) = servermain.servermain(img_file_name)
-    print("yay i passed the server thing")
+    print("yay i passed the server thing!")
     if success and (possible_err_name is None):
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Excellent", reply_to_message_id=update.message.message_id)
     else:
@@ -175,6 +175,13 @@ async def process_image(update, context):
     await context.bot.send_media_group(chat_id=update.effective_chat.id, media=mediagroup, caption="Solved!\nHere's the solved puzzle placed inside the original image, alongside a high quality image of only the solved grid.")
     print(f"User: {update.message.from_user.username}   |   File name: {img_file_name}   |   Grid: {solved_grid}")
     gc.collect()
+    print(os.listdir(os.getcwd()))
+    os.remove(solvedgridfilename)
+    os.remove(solvedimagefilename)
+    os.remove(img_file_name)
+    os.system('rm *.jpg')
+    os.system('rm *.png')
+    print(os.listdir(os.getcwd()))
 
 
 async def save_attachment_to_file(update, context):
