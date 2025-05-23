@@ -271,7 +271,7 @@ def write_grid_to_gridjpg(tiles_list: list, ogfilename: str, solvedfilename: str
     largest_square, solved_grid, org_rgb_image, mostly_black = sudokuimagetool.write_solved_grid_to_image(newfilename=gridname, filename=ogfilename, tile_list=tiles_list)
     print("saved grid to it's own image.")
     gc.collect()
-    sudokuimagetool.write_solved_grid_to_original_image(newfilename=solvedfilename, largest_square, solved_grid, org_rgb_image, mostly_black)
+    sudokuimagetool.write_solved_grid_to_original_image(solvedfilename, largest_square, solved_grid, org_rgb_image, mostly_black)
     print("saved grid on the original image")
 
 
