@@ -59,7 +59,7 @@ atexit.register(exit_handler)
 
 import socket
 import threading
-import requests
+# import requests
 import time
 import asyncio
 from http import HTTPStatus
