@@ -280,7 +280,7 @@ def main(model, filename) -> int:  # main thing with all of the main UX and styl
     if not couldbesolved:
         print(colored("There's an error in:  1. The image quality - 2. The puzzle configuration - 3. The program", "red"))
         print(colored("Try sending a clearer picture, more zoomed in and clearer digits, and an obvious square grid with visibly distinct edges in the image.", "red"))
-        print(colored("If you still face this error, check the validty of your puzzles and if it's correct or the image keeps refusing, report the issue to the admin on Telegram [@FYI-PSA](https://t.me/FYI-PSA) or open an issue report on this project's GitHub", "magenta"))
+        print(colored("If you still face this error, check the validty of your puzzles and if it's correct or the image keeps refusing, report the issue to the admin on Telegram [@FYI_PSA](https://t.me/FYI_PSA) or open an issue report on this project's GitHub", "magenta"))
         print(colored("Project GitHub Page: [github.com/FYI-PSA/ImageSudokuSolver](https://github.com/FYI-PSA/ImageSudokuSolver/)", "magenta"))
         return 1
     print("\n")
@@ -308,7 +308,7 @@ def servermain(filename):
                             "- **The puzzle configuration**  \n"
                             "    > If you still face this message after the previous step, check the validty of your puzzle.  \n"
                             "- **The program**  \n"
-                            "    > If your image and puzzle are both correct and visible, report this issue to the admin on Telegram: [@FYI-PSA](https://t.me/FYI-PSA/)")
+                            "    > If your image and puzzle are both correct and visible, report this issue to the admin on Telegram: [@FYI_PSA](https://t.me/FYI_PSA/)")
         err_message_html: str = ("There's an error in one of the following:\n\n"
                             ""
                             "- <b>The image quality</b>\n"
@@ -316,7 +316,7 @@ def servermain(filename):
                             "- <b>The puzzle configuration</b>\n"
                             "    <blockquote> If you still face this message after the previous step, check the validty of your puzzle. </blockquote>\n\n"
                             "- <b>The program</b>\n"
-                            "    <blockquote> If your image and puzzle are both correct and visible, report this issue to the admin on Telegram: <a href='https://t.me/FYI-PSA/'>@FYI-PSA</a> </blockquote>\n"
+                            "    <blockquote> If your image and puzzle are both correct and visible, report this issue to the admin on Telegram: <a href='https://t.me/FYI_PSA/'>@FYI_PSA</a> </blockquote>\n"
                             "")
         return(False, gridname, solvedname, copy.deepcopy(GRID), str(err_message_html), 'CouldNotBeSolved', 309)
     solved_tiles = []
