@@ -6,7 +6,7 @@ from copy import deepcopy
 
 
 class plot():
-    def __init__(self):
+    def self.__init__(self):
         pass
     def self.title(self, string):
         pass
