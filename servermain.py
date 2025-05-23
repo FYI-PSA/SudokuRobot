@@ -246,7 +246,7 @@ def CheckValidGrid(gridbase) -> bool:  # takes a solved or an unsolved grid and 
     return True
 
 
-def read_gridjpg_to_grid(kerasmodel, filename, grayscale_numpy_tiles_list_to_predicted_integer_list=predict_grayscale_func) -> list:
+def read_gridjpg_to_grid(kerasmodel, filename, grayscale_numpy_tiles_list_to_predicted_integer_list) -> list:
     global EMPTYGRID
     current_directory_files = [str(f) for f in os.listdir(os.getcwd())]
     if not (str(filename) in current_directory_files):
