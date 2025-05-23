@@ -299,7 +299,7 @@ def main(model, filename, predict_grayscale_func) -> int:  # main thing with all
 def servermain(filename, AImodel, predict_grayscale_func):
     print('entering servermain')
     global GRID, EMPTYGRID
-    GRID = deepcopy(EMPTYGRID)
+    GRID = copy.deepcopy(EMPTYGRID)
     filename = str(filename)
     name, ext = map(str, getfilenameinfo(filename))
     gridname = str(f"{name}_solved_grid.{ext}")
