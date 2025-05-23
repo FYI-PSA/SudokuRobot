@@ -10,6 +10,8 @@ from collections import Counter
 import tilereader
 import sudokuimagetool
 
+import gc
+
 
 import logging
 print=logging.info
@@ -265,8 +267,12 @@ def read_gridjpg_to_grid(kerasmodel, filename) -> list:
 
 
 def write_grid_to_gridjpg(tiles_list: list, ogfilename: str, solvedfilename: str, gridname: str):
-    sudokuimagetool.write_solved_grid_to_image(newfilename=gridname, filename=ogfilename, tile_list=tiles_list)
-    sudokuimagetool.write_solved_grid_to_original_image(newfilename=solvedfilename, filename=ogfilename, tile_list=tiles_list)
+    print("saving to files...")
+    largest_square, solved_grid, org_rgb_image, mostly_black = sudokuimagetool.write_solved_grid_to_image(newfilename=gridname, filename=ogfilename, tile_list=tiles_list)
+    print("saved grid to it's own image.")
+    gc.collect()
+    sudokuimagetool.write_solved_grid_to_original_image(newfilename=solvedfilename, largest_square, solved_grid, org_rgb_image, mostly_black)
+    print("saved grid on the original image")
 
 
 def main(model, filename) -> int:  # main thing with all of the main UX and styling going on. gets the time to solve, solves the grid, returns.
@@ -330,6 +336,7 @@ def servermain(filename):
                             "    <blockquote> If your image and puzzle are both correct and visible, report this issue to the admin on Telegram: <a href='https://t.me/FYI_PSA/'>@FYI_PSA</a> </blockquote>\n"
                             "")
         return(False, gridname, solvedname, copy.deepcopy(GRID), str(err_message_html), 'CouldNotBeSolved', 309)
+    gc.collect()
     solved_tiles = []
     for row in GRID:
         solved_tiles.extend(row)
