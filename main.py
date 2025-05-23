@@ -213,10 +213,6 @@ async def error_handler(update, context):
         print('\n\n')
 
 
-async def await_run_polling(application):
-    await application.run_polling()
-
-
 def main(token, adminid):
     time.sleep(0.1)
     
@@ -242,9 +238,9 @@ def main(token, adminid):
     application.add_error_handler(error_handler)
 
     event_loop.run_until_complete(notifystart(application, adminid))
-    while True:
-        asyncio.run(await_run_polling(application))
-        print("Mainloooop...")
+    application.run_polling()
+    
+    print("Mainloooop... died??? HOW!?")
     sock_listener_thread.join()
 
 
