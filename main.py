@@ -163,6 +163,7 @@ async def process_image(update, context):
     print("Brb...")
     img_file_name = await save_attachment_to_file(update, context)
     time.sleep(1)
+    print(f"Saved the file as {img_file_name}")
     img_file_name = str(img_file_name)
     (success, solvedgridfilename, solvedimagefilename, solved_grid, possible_err_details, possible_err_name, possible_err_line) = servermain.servermain(img_file_name)
     print("yay i passed the server thing")
