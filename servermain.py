@@ -291,7 +291,8 @@ def main(model, filename) -> int:  # main thing with all of the main UX and styl
     return 0
 
 
-def servermain(filename):
+def servermain(filename, logger=print):
+    print=logger
     global GRID
     filename = str(filename)
     AImodel = tilereader.load_model()
