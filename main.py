@@ -130,6 +130,18 @@ while tf_is_annoying:
         print("tf is annoying.")
 
 
+def get_or_create_eventloop():
+    try:
+        return asyncio.get_event_loop()
+    except RuntimeError as ex:
+        if "no current event loop" in str(ex):
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            return asyncio.get_event_loop()
+        else:
+          raise ex
+
+
 async def echo(update, context):
     message = update.message.text
     await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Use /help to learn about what to do if facing an issue.\nUse /start to learn how to use the bot.")
@@ -193,6 +205,8 @@ def main(token, adminid):
     sock_listener_thread = threading.Thread(target=sock_listener, args=(sock, ))
     sock_listener_thread.start()
     
+    event_loop = get_or_create_eventloop()
+
     application = ApplicationBuilder().token(f"{token}").build()
     
     start_handler = CommandHandler('start', start)
