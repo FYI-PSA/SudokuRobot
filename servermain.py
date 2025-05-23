@@ -302,13 +302,13 @@ def servermain(filename):
     except Exception as err_message:
         return (False, gridname, solvedname, copy.deepcopy(GRID), str(err_message), type(err_message).__name__, sys.exc_info()[-1].tb_lineno)
     if res != 0:
-        err_message: str = ("There's an error in one of the following:\n"
-                            "- The image quality\n"
-                            "    Try sending a clearer picture, more zoomed in and clearer digits, and an obvious square grid with visibly distinct edges in the image.\n"
-                            "- The puzzle configuration\n"
-                            "    If you still face this message after the previous step, check the validty of your puzzle.\n"
-                            "- The program\n"
-                            "    If your image and puzzle are both correct and visible, report this issue to the admin on Telegram [@FYI-PSA](https://t.me/FYI-PSA/)")
+        err_message: str = ("There's an error in one of the following:  \n"
+                            "- **The image quality**  \n"
+                            "    > Try sending a clearer picture, more zoomed in and clearer digits, and an obvious square grid with visibly distinct edges in the image.  \n"
+                            "- **The puzzle configuration**  \n"
+                            "    > If you still face this message after the previous step, check the validty of your puzzle.  \n"
+                            "- **The program**  \n"
+                            "    > If your image and puzzle are both correct and visible, report this issue to the admin on Telegram: [@FYI-PSA](https://t.me/FYI-PSA/)")
         return(False, gridname, solvedname, copy.deepcopy(GRID), str(err_message), 'CouldNotBeSolved', 309)
     solved_tiles = []
     for row in GRID:
