@@ -158,7 +158,7 @@ async def process_image(update, context):
     time.sleep(1)
     print(f"Saved the file as {img_file_name}")
     img_file_name = str(img_file_name)
-    (success, solvedgridfilename, solvedimagefilename, solved_grid, possible_err_details, possible_err_name, possible_err_line) = servermain.servermain(img_file_name)
+    (success, solvedgridfilename, solvedimagefilename, solved_grid, possible_err_details, possible_err_name, possible_err_line) = servermain.servermain(img_file_name, logger=logging.info)
     print("yay i passed the server thing!")
     if success and (possible_err_name is None):
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Excellent", reply_to_message_id=update.message.message_id)
