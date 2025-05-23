@@ -346,6 +346,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False, debug: b
         key = f'{n}.png'
         image = Image.open(DIRECTORY+key)
         whiter_image = ImageOps.expand(image, border=37, fill='white')
+        whiter_image = ImageOps.expand(whiter_image, border=17, fill='white')
         val = ImageOps.expand(whiter_image, border=18, fill='black')
         side = val.width  # lazily read this every iteration instead of making logic for only reading it once
         picdict.update({key: val})
