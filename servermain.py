@@ -317,16 +317,7 @@ def servermain(filename):
                             "    <blockquote> If you still face this message after the previous step, check the validty of your puzzle. </blockquote><br><br>"
                             "- <li><b>The program</b><br>"
                             "    <blockquote> If your image and puzzle are both correct and visible, report this issue to the admin on Telegram: <a href='https://t.me/FYI-PSA/'>@FYI-PSA</a> </blockquote><br>"
-                            "</ul>")            
-        h: str= "There's an error in one of the following:<br>"
-                            "<ul>"
-                            "<li><strong>The image quality</strong><br>"
-                            "Try sending a clearer picture, more zoomed in and clearer digits, and an obvious square grid with visibly distinct edges in the image.</li>"
-                            "<li><strong>The puzzle configuration</strong><br>"
-                            "If you still face this message after the previous step, check the validity of your puzzle.</li>"
-                            "<li><strong>The program</strong><br>"
-                            "If your image and puzzle are both correct and visible, report this issue to the admin on Telegram <a href='https://t.me/FYI-PSA'>@FYI-PSA</a>.</li>"
-                            "</ul>"
+                            "</ul>")
         return(False, gridname, solvedname, copy.deepcopy(GRID), str(err_message_html), 'CouldNotBeSolved', 309)
     solved_tiles = []
     for row in GRID:
