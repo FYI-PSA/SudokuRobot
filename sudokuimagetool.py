@@ -453,7 +453,8 @@ def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list,
     else:
         mostly_black = False
     mostly_black = False
-    grid_size = (1080, 1080)
+    # grid_size = (1080, 1080)
+    grid_size = (512, 512)
     solved_grid = generate_grid(tiles=tile_list, size=grid_size, mostly_black=mostly_black, debug=debug)
     solved_grid.save(newfilename)
     return largest_square, solved_grid, org_rgb_image, mostly_black
