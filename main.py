@@ -57,6 +57,9 @@ def exit_handler():
 atexit.register(exit_handler)
 
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
+
 import socket
 import threading
 # import requests
