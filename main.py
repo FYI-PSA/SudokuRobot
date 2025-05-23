@@ -112,7 +112,7 @@ async def help(update, context):
     user = update.message.from_user
     user_profile = f'Name: {user.first_name} - {user.last_name}   |   Username: {user.username}   |   Id: {user.id}'
     print(f"User info:\n{user_profile}")
-    if user.username == 'FYI-PSA':
+    if user.username == 'FYI_PSA':
         print("Admin spotted!")
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Admin! Your effective_chat.id is {update.effective_chat.id}")
 
