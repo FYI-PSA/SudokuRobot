@@ -1,0 +1,11 @@
+python-telegram-bot
+# telegram
+requests
+psutil
+numpy==2.1.3
+tensorflow==2.19.0
+opencv-python>4
+pillow>9
+matplotlib==3.10.1
+# colorama
+# termcolor==3.1.0
