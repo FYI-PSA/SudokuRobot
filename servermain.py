@@ -4,7 +4,6 @@ import copy
 import math
 import time
 from collections import Counter
-import tilereader
 import sudokuimagetool
 
 import gc
@@ -297,13 +296,11 @@ def main(model, filename) -> int:  # main thing with all of the main UX and styl
     print("\n")
     return 0
 
-
-def servermain(filename):
+def servermain(filename, AImodel):
     print('entering servermain')
-    global GRID
+    global GRID, EMPTYGRID
+    GRID = deepcopy(EMPTYGRID)
     filename = str(filename)
-    AImodel = tilereader.load_model()
-    print('ai model loaded.')
     name, ext = map(str, getfilenameinfo(filename))
     gridname = str(f"{name}_solved_grid.{ext}")
     solvedname = str(f"{name}_solved.{ext}")
@@ -332,16 +329,16 @@ def servermain(filename):
                             "- <b>The program</b>\n"
                             "    <blockquote> If your image and puzzle are both correct and visible, report this issue to the admin on Telegram: <a href='https://t.me/FYI_PSA/'>@FYI_PSA</a> </blockquote>\n"
                             "")
-        return(False, gridname, solvedname, copy.deepcopy(GRID), str(err_message_html), 'CouldNotBeSolved', 309)
+        return(False, gridname, solvedname, GRID, str(err_message_html), 'CouldNotBeSolved', 309)
     gc.collect()
     solved_tiles = []
     for row in GRID:
         solved_tiles.extend(row)
     print(f'desolved grid to {solved_tiles}')
-    GRID = copy.deepcopy(solved_tiles)
+    GRID = solved_tiles
     write_grid_to_gridjpg(solved_tiles, filename, solvedname, gridname)   
     print('going home...')
-    return (True, gridname, solvedname, copy.deepcopy(GRID), None, None, None)
+    return (True, gridname, solvedname, GRID, None, None, None)
 
 
 if __name__ == '__main__':
