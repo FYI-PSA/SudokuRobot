@@ -294,17 +294,23 @@ def main(model, filename) -> int:  # main thing with all of the main UX and styl
 
 
 def servermain(filename):
+    print('entering servermain')
     global GRID
     filename = str(filename)
     AImodel = tilereader.load_model()
+    print('ai model loaded.')
     name, ext = map(str, getfilenameinfo(filename))
     gridname = str(f"{name}_solved_grid.{ext}")
     solvedname = str(f"{name}_solved.{ext}")
+    print(f'name {name} ext {ext} gridname {gridname} solvedname {solvedname}')
     try:
         res = main(model=AImodel, filename=filename)
+        print('got a result')
     except Exception as err_message:
+        print('got an error')
         return (False, gridname, solvedname, copy.deepcopy(GRID), str(err_message), type(err_message).__name__, sys.exc_info()[-1].tb_lineno)
     if res != 0:
+        print('got no result but no error')
         err_message_md: str = ("There's an error in one of the following:  \n"
                             "- **The image quality**  \n"
                             "    > Try sending a clearer picture, more zoomed in and clearer digits, and an obvious square grid with visibly distinct edges in the image.  \n"
@@ -325,8 +331,10 @@ def servermain(filename):
     solved_tiles = []
     for row in GRID:
         solved_tiles.extend(row)
+    print(f'desolved grid to {solved_tiles}')
     GRID = copy.deepcopy(solved_tiles)
     write_grid_to_gridjpg(solved_tiles, filename, solvedname, gridname)   
+    print('going home...'
     return (True, gridname, solvedname, copy.deepcopy(GRID), None, None, None)
 
 
