@@ -28,7 +28,7 @@ plt = plot()
 #     return treshholded
 
 
-def rgb_image_from_file(fname: str, debug: bool = False):
+def rgb_image_from_file(fname: str, debug: bool = False) -> Image.Image:
     img = Image.open(fname)
     img = img.convert('RGB')
     if debug:
@@ -351,7 +351,7 @@ def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool =
     return clean_tiles
 
 
-def generate_grid(tiles: list, size: tuple, mostly_black: bool = False, debug: bool = False):
+def generate_grid(tiles: list, size: tuple, mostly_black: bool = False, debug: bool = False) -> Image.Image:
     picdict = {}
     DIRECTORY = 'numbers/'
     for n in range(0, 10):
@@ -382,7 +382,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False, debug: b
     return grid_image
 
 
-def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list, debug: bool = False, moredebug: bool = False, mostdebug: bool = False, IWANTMOREDEBUG: bool = False) -> Image.Image:  # RGB Image
+def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list, debug: bool = False, moredebug: bool = False, mostdebug: bool = False, IWANTMOREDEBUG: bool = False) -> tuple: 
     org_rgb_image = rgb_image_from_file(filename)
     
     blurmode = 0
@@ -448,21 +448,36 @@ def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list,
         debug_draw_mask_to_original_image(square_mask, org_rgb_image)
     
     grid = largest_square_image
-    # if np.average(grid) < (255.0/2.1):  
-    #     mostly_black = True
-    # else:
-    #     mostly_black = False
-    # grid_size = np.shape(grid)[0:2]
-    # does this one actually care? i dont think so...
-    # the solved grid should just keep its size and be the original black-on-white color.
+    if np.average(grid) < (255.0/2.1):  
+        mostly_black = True
+    else:
+        mostly_black = False
     mostly_black = False
     grid_size = (1080, 1080)
     solved_grid = generate_grid(tiles=tile_list, size=grid_size, mostly_black=mostly_black, debug=debug)
-    solved_grid.save(newfilename, 'PNG')
-    return deepcopy(solved_grid)
+    solved_grid.save(newfilename)
+    return largest_square, solved_grid, org_rgb_image, mostly_black
 
 
-def write_solved_grid_to_original_image(newfilename: str, filename: str, tile_list: list, debug: bool = False, moredebug: bool = False, mostdebug: bool = False, IWANTMOREDEBUG: bool = False) -> np.ndarray:
+def write_solved_grid_to_original_image(newfilename: str, largest_square: tuple, solved_grid: Image.Image, org_rgb_image: np.ndarray, mostly_black):
+    
+    x, y, w, h = largest_square
+    
+    # solved_grid = generate_grid(tiles=tile_list, size=grid_size, mostly_black=mostly_black, debug=debug)
+    solved_grid = solved_grid.resize((w, h), Image.LANCZOS)
+    if mostly_black:
+        solved_grid = ImageOps.invert(solved_grid)
+    
+    solved_image = np.asarray(org_rgb_image, dtype=np.uint8).copy()
+
+    solved_image[y:y+h, x:x+h] = np.asarray(solved_grid, dtype=np.uint8).copy()
+    solved_image = Image.fromarray(solved_image)
+    solved_image.save(newfilename)
+    
+    return deepcopy(solved_image)
+
+
+def IDIOTIC_write_solved_grid_to_original_image(newfilename: str, filename: str, tile_list: list, debug: bool = False, moredebug: bool = False, mostdebug: bool = False, IWANTMOREDEBUG: bool = False) -> np.ndarray:
     org_rgb_image = rgb_image_from_file(filename)
     
     blurmode = 0
