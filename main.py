@@ -117,8 +117,13 @@ async def help(update, context):
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Admin! Your effective_chat.id is {update.effective_chat.id}")
 
 
-
-import servermain
+tf_is_annoying = True
+while tf_is_annoying:
+    try:
+        import servermain
+        tf_is_annoying = False
+    except:
+        print("tf is annoying.")
 
 
 async def echo(update, context):
@@ -172,8 +177,9 @@ async def error_handler(update, context):
     else:
         logging.info('\n\n')
         logging.error(f"An unexpected exception, you should investigate: {err}") 
-        logging.info(f"Error line: {sys.exc_info()[-1].tb_lineno}")
-        logging.info('\n\n')
+        errline = sys.exc_info()[-1].tb_lineno
+        print(f"Error line: {errline}")
+        print('\n\n')
 
 
 def main(token):
