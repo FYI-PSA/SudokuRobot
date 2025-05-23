@@ -209,7 +209,7 @@ async def error_handler(update, context):
         print('\n\n')
 
 
-async def await_run_polling(application, event_loop):
+async def await_run_polling(application):
     await application.run_polling()
 
 
@@ -239,7 +239,7 @@ def main(token, adminid):
 
     event_loop.run_until_complete(notifystart(application, adminid))
     while True:
-        event_loop.run(await_run_polling(application, event_loop))
+        asyncio.run(await_run_polling(application))
         print("Mainloooop...")
     sock_listener_thread.join()
 
