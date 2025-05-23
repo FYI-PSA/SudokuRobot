@@ -138,7 +138,8 @@ async def process_image(update, context):
         # await context.bot.send_message(chat_id=update.effective_chat.id, text="Excellent", reply_to_message_id=update.message.message_id)
         pass
     else:
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"I can't solve this.<br>{possible_err_details}", reply_to_message_id=update.message.message_id, parse_mode='MarkdownV2')
+        # await context.bot.send_message(chat_id=update.effective_chat.id, text=f"I can't solve this.<br>{possible_err_details}", reply_to_message_id=update.message.message_id, parse_mode='MarkdownV2')
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"I can't solve this.<br>{possible_err_details}", reply_to_message_id=update.message.message_id, parse_mode='Markdown')
         print(f"User: {update.message.from_user.username}   |   Failed: {possible_err_name}: {possible_err_line} : {possible_err_details}")
         raise Exception(f"{possible_err_name} : {possible_err_line} : {possible_err_details}")
         return
