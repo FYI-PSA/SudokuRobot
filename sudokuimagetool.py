@@ -330,27 +330,47 @@ def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool =
 def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image.Image:
     picdict = {}
     DIRECTORY = 'numbers/'
-    checked_side = False
     side = 0
+    border_thick = 16
+
+    checked_side = False
     for n in range(0, 10):
         key = f'{n}.png'
         image = Image.open(DIRECTORY+key)
-        image = ImageOps.expand(image, border=48, fill='white')
-        image = ImageOps.expand(image, border=18, fill='black')
+        image = ImageOps.expand(image, border=border_thick*3, fill='white')
+        image = ImageOps.expand(image, border=border_thick, fill='black')
         if not checked_side:
             side = image.width
             checked_side = True
         picdict.update({key: image})
+    
     gc.collect()
+
     initial_size = (side*9, side*9)
     print(f"size before resize: {initial_size}")
     image: Image.Image = Image.new('RGB', initial_size)
+    
     for i, n in enumerate(tiles):
         row = i // 9
         col = i % 9
         c_tile = picdict[f'{n}.png']
-        image.paste(c_tile, (col*side, row*side))
-    image = ImageOps.expand(image, border=18, fill='black')
+        
+        new_tile = np.asarray(c_tile, dtype=np.uint8)[:, :, [2, 1, 0]]  # BGR mode for CV2
+        
+        if (col % 3 == 2) and (col != 8):
+            new_tile = cv2.copyMakeBorder(new_tile, 0, 0, 0, border_thick, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+        
+        if (row % 3 == 2) and (row != 8):
+            new_tile = cv2.copyMakeBorder(new_tile, 0, border_thick, 0, 0, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+        
+        new_tile = Imge.fromarray(new_tile[:, :, [2, 1, 0]])  # Back to RGB mode for Pillow
+        new_tile = new_tile.resize((side, side), Image.LACZOS)
+
+        image.paste(new_tile, (col*side, row*side))
+        del new_tile
+        
+        gc.collect()
+    image = ImageOps.expand(image, border=border_thick, fill='black')
     image = image.resize(size, Image.LANCZOS)
     if mostly_black:
         image = ImageOps.invert(image)
