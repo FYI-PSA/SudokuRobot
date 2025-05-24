@@ -356,7 +356,7 @@ def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool =
 # If I face more memory issues:
 # 1. lower the size of the numbers/ files
 # 2. lower the size of this image
-def generate_grid(tiles: list, size: tuple, mostly_black: bool = False, debug: bool = False) -> Image.Image:
+def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image.Image:
     picdict = {}
     DIRECTORY = 'numbers/'
     checked_side = False
@@ -365,7 +365,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False, debug: b
         # print(f'do u crash here? {n}')
         key = f'{n}.png'
         image = Image.open(DIRECTORY+key)
-        image = ImageOps.expand(image, border=42, fill='white')
+        image = ImageOps.expand(image, border=48, fill='white')
         image = ImageOps.expand(image, border=18, fill='black')
         if not checked_side:
             side = image.width
@@ -386,10 +386,6 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False, debug: b
     image = image.resize(size, Image.LANCZOS)
     if mostly_black:
         image = ImageOps.invert(image)
-    if debug:
-        plt.imshow(image)
-        plt.title('solved grid')
-        plt.show()
     return image
 
 
@@ -440,7 +436,7 @@ def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list)
         mostly_black = True
     # grid_size = (1080, 1080)
     grid_size = (512, 512)
-    solved_grid = generate_grid(tiles=tile_list, size=grid_size, mostly_black=mostly_black)
+    solved_grid = generate_grid(tile_list, grid_size, False)
     solved_grid.save(newfilename)
     return (largest_square, solved_grid, org_rgb_image, mostly_black)
 
