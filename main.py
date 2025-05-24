@@ -196,7 +196,8 @@ async def process_image(update, context):
             'Please report the admin @FYI_PSA\n'
             'Sending your solved puzzle as a message instead.')
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, reply_to_message_id=update.message.message_id)
-        servermain.gridprint(solved_grid)
+        gridstr = servermain.gridstring(solved_grid)
+        print(gridstr)
         await context.bot.send_message(chat_id=update.effective_chat.id, text=gridstr, reply_to_message_id=update.message.message_id)
         return
     else:
