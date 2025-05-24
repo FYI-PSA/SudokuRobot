@@ -4,6 +4,7 @@ import cv2
 from copy import deepcopy
 # from matplotlib import pyplot as plt
 
+import gc
 
 import logging
 print = logging.info
@@ -371,6 +372,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False, debug: b
             side = image.width
             checked_side = True
         picdict.update({key: image})
+    gc.collect()
     initial_size = (side*9, side*9)
     if debug:
         print(f"size before resize: {initial_size}")
@@ -392,31 +394,29 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False, debug: b
     return image
 
 
-def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list, debug: bool = False, moredebug: bool = False, mostdebug: bool = False, IWANTMOREDEBUG: bool = False) -> tuple: 
+def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list) -> tuple: 
     org_rgb_image = rgb_image_from_file(filename)
-    
     blurmode = 0
     success = False
     badimage = False
     finish = False
     most_rects = []
     most_count = 0
-    best_mode = -1
-
+    most_mode = -1
     largest_square = (0, 0, 0, 0)
     largest_square_image = np.ndarray([],dtype=np.uint8)
     largest_suqare_rectangles = []
     largest_square_mode = -1
     while not finish:
         try:
-            threshholded_grayscale_image = rgb_image_to_inverse_treshholded_grayscale(org_rgb_image, purpose='detect', blurdiff=blurmode, debug=debug, moredebug=moredebug)
-            rectangle_boxes = rectangle_contours_from_inverse_threshholded_image(threshholded_grayscale_image, debug=debug)
+            threshholded_grayscale_image = rgb_image_to_inverse_treshholded_grayscale(org_rgb_image, purpose='detect', blurdiff=blurmode)
+            rectangle_boxes = rectangle_contours_from_inverse_threshholded_image(threshholded_grayscale_image)
             count = len(rectangle_boxes)
             if count == max(most_count, count):
                 most_count = count
                 most_rects = deepcopy(rectangle_boxes)
-                best_mode = deepcopy(blurmode)
-            square_image, square_properties = rectangles_to_square_image(rectangle_boxes, org_rgb_image, debug=mostdebug)
+                most_mode = blurmode
+            square_image, square_properties = rectangles_to_square_image(rectangle_boxes, org_rgb_image)
             x, y, w, h = square_properties
             if w > largest_square[2] and (h == w):
                 largest_square = deepcopy(square_properties)
@@ -425,38 +425,15 @@ def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list,
                 largest_square_mode = deepcopy(blurmode)
             success = True
         except BadImageException:
-            if debug:
-                print(f"Blur mode {blurmode} failed. Trying another.")
+            pass
         except NoMoreBlurException:
             blurmode -= 1
             finish = True
-            if debug:
-                print("Ran out of blur modes.")
         finally:
             blurmode += 1
-    
+    gc.collect()
     if not success:
-        if debug:
-            print(f"Unsuccessful. Displaying the most amount of rectangles ({most_count}) that was accuired during mode {best_mode}")    
-            debug_display_rectangles(most_rects, org_rgb_image, IWANTMOREDEBUG)
         raise BadImageException("Your image didn't have any shapes almost resembling a square or a grid.\nThis could be an issue of too-similarly colored edges on the boxes, or a low quality image.")
-
-    if debug:
-        print(f"At least one grid was recognised using blur mode(s) {largest_square_mode} and {best_mode}! Woo hoo!")
-    
-    if debug and mostdebug:
-        print(f"*Most* rectangles found but not neccasarily the biggest square in them: Mode {largest_square_mode}")
-        debug_display_rectangles(most_rects, org_rgb_image, IWANTMOREDEBUG)
-        print(f"*Biggest* square found but not neccasarily the most rectangles in them: Mode {largest_square_mode}")
-        debug_display_rectangles(largest_square_rectangles, org_rgb_image, IWANTMOREDEBUG)
-    
-    if debug:
-        plt.title("Largest recognised square in all of the image:")
-        plt.imshow(largest_square_image)
-        plt.show()
-        square_mask = draw_boundary_to_new_mask(largest_square, org_rgb_image)
-        debug_draw_mask_to_original_image(square_mask, org_rgb_image)
-    
     grid = largest_square_image
     if np.average(grid) < (255.0/2.1):  
         mostly_black = True
@@ -465,7 +442,7 @@ def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list,
     mostly_black = False
     # grid_size = (1080, 1080)
     grid_size = (512, 512)
-    solved_grid = generate_grid(tiles=tile_list, size=grid_size, mostly_black=mostly_black, debug=debug)
+    solved_grid = generate_grid(tiles=tile_list, size=grid_size, mostly_black=mostly_black)
     solved_grid.save(newfilename)
     return largest_square, solved_grid, org_rgb_image, mostly_black
 
@@ -484,7 +461,7 @@ def write_solved_grid_to_original_image(newfilename: str, largest_square: tuple,
     solved_image[y:y+h, x:x+h] = np.asarray(solved_grid, dtype=np.uint8).copy()
     solved_image = Image.fromarray(solved_image)
     solved_image.save(newfilename)
-    
+    gc.collect()
     return deepcopy(solved_image)
 
 
@@ -552,6 +529,8 @@ def IDIOTIC_write_solved_grid_to_original_image(newfilename: str, filename: str,
         plt.show()
         square_mask = draw_boundary_to_new_mask(largest_square, org_rgb_image)
         debug_draw_mask_to_original_image(square_mask, org_rgb_image)
+
+    gc.collect()
     
     grid = largest_square_image
     if np.average(grid) < (255.0/2.1):  
