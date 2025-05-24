@@ -358,34 +358,37 @@ def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool =
 def generate_grid(tiles: list, size: tuple, mostly_black: bool = False, debug: bool = False) -> Image.Image:
     picdict = {}
     DIRECTORY = 'numbers/'
+    checked_side = False
+    side = 0
     for n in range(0, 10):
         print(f'do u crash here? {n}')
         key = f'{n}.png'
         image = Image.open(DIRECTORY+key)
-        whiter_image = ImageOps.expand(image, border=37, fill='white')
-        whiter_image = ImageOps.expand(whiter_image, border=17, fill='white')
-        val = ImageOps.expand(whiter_image, border=18, fill='black')
-        side = val.width  # lazily read this every iteration instead of making logic for only reading it once
-        picdict.update({key: val})
+        image = ImageOps.expand(image, border=37, fill='white')
+        image = ImageOps.expand(image, border=17, fill='white')
+        image = ImageOps.expand(image, border=18, fill='black')
+        if not checked_side:
+            side = image.width
+        picdict.update({key: image})
     initial_size = (side*9, side*9)
     if debug:
         print(f"size before resize: {initial_size}")
-    grid_image = Image.new('RGB', initial_size)
+    image = Image.new('RGB', initial_size)
     for i, n in enumerate(tiles):
         row = i // 9
         col = i % 9
         c_tile = picdict[f'{n}.png']
-        grid_image.paste(c_tile, (col*side, row*side))
+        image.paste(c_tile, (col*side, row*side))
         print(f'do u crash here? {i}')
-    grid_image = ImageOps.expand(grid_image, border=18, fill='black')
-    grid_image = grid_image.resize(size, Image.LANCZOS)
+    image = ImageOps.expand(image, border=18, fill='black')
+    image = image.resize(size, Image.LANCZOS)
     if mostly_black:
-        grid_image = ImageOps.invert(grid_image)
+        image = ImageOps.invert(image)
     if debug:
-        plt.imshow(grid_image)
+        plt.imshow(image)
         plt.title('solved grid')
         plt.show()
-    return grid_image
+    return image
 
 
 def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list, debug: bool = False, moredebug: bool = False, mostdebug: bool = False, IWANTMOREDEBUG: bool = False) -> tuple: 
