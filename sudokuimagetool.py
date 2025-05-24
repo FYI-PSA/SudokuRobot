@@ -363,7 +363,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         if (row % 3 == 2) and (row != 8):
             new_tile = cv2.copyMakeBorder(new_tile, 0, border_thick, 0, 0, cv2.BORDER_CONSTANT, value=(0, 0, 0))
         
-        new_tile = Image.fromarray(new_tile[:, :, [2, 1, 0]])  # Back to RGB mode for Pillow
+        new_tile = Imge.fromarray(new_tile[:, :, [2, 1, 0]])  # Back to RGB mode for Pillow
         new_tile = new_tile.resize((side, side), Image.LACZOS)
 
         image.paste(new_tile, (col*side, row*side))

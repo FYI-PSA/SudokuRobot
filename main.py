@@ -195,7 +195,7 @@ async def process_image(update, context):
         response: str = ('Solving the grid was done successfully, but there was an error while attempting to make it into an image.\n'
             'Sending as a message instead.')
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, reply_to_message_id=update.message.message_id)
-        servermain.gridprint(solved_Grid)
+        servermain.gridprint(solved_grid)
         await context.bot.send_message(chat_id=update.effective_chat.id, text=gridstr, reply_to_message_id=update.message.message_id)
         return
     else:
