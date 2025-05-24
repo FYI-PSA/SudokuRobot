@@ -184,7 +184,7 @@ async def process_image(update, context):
      solved_grid,
      possible_err_details,
      possible_err_name,
-     possible_err_line ) = response_tuple
+     possible_err_line) = response_tuple
 
     print("Woohoo! The heart beat and did its thing!")
     
