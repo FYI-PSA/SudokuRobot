@@ -358,10 +358,10 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         new_tile = np.asarray(c_tile, dtype=np.uint8)[:, :, [2, 1, 0]]  # BGR mode for CV2
         
         if (col % 3 == 2) and (col != 8):
-            new_tile = cv2.copyMakeBorder(new_tile, 0, 0, 0, border_thick, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+            new_tile = cv2.copyMakeBorder(new_tile, 0, 0, 0, border_thick*2, cv2.BORDER_CONSTANT, value=(0, 0, 0))
         
         if (row % 3 == 2) and (row != 8):
-            new_tile = cv2.copyMakeBorder(new_tile, 0, border_thick, 0, 0, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+            new_tile = cv2.copyMakeBorder(new_tile, 0, border_thick*2, 0, 0, cv2.BORDER_CONSTANT, value=(0, 0, 0))
         
         new_tile = Image.fromarray(new_tile[:, :, [2, 1, 0]])  # Back to RGB mode for Pillow
         new_tile = new_tile.resize((side, side), Image.LANCZOS)
