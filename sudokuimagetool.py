@@ -441,7 +441,7 @@ def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list)
     print(np.shape(grid)[0:2])
     print('^ grid shape')
     print(np.shape(largest_square_image))
-    print([i for i in square_properties])
+    print([i for i in largest_square])
     print('??? is there a mismatch here?')
     mostly_black = False
     if np.average(grid) < (255.0/2.1):
