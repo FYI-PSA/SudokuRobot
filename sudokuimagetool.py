@@ -269,6 +269,7 @@ def rectangles_to_square_image(rectangle_boxes: list, rgb_image: np.ndarray, deb
     boundingbox_square = largest_square_bounding_from_list_of_rectangles(rectangle_boxes, debug=debug)
     corrected_boundary = ensure_square_boundary(boundingbox_square)  # ensures that width and height are the exact same number, by expanding the smaller one (if they're close to the shape of a square)
     square_image = extract_square_boundary_to_image(corrected_boundary, rgb_image, debug=debug)
+    print('bb: {boundingbox_square}\ncorrected: {corrected_boundary}\nimgshape: {np.shape(square_image)}\n\n')
     return (square_image, corrected_boundary)
 
 
@@ -442,7 +443,7 @@ def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list)
     print('^ grid shape')
     print(np.shape(largest_square_image))
     print([i for i in largest_square])
-    print('??? is there a mismatch here?')
+    print('??? is there a mismatch here?')  # yup
     mostly_black = False
     if np.average(grid) < (255.0/2.1):
         mostly_black = True
