@@ -327,6 +327,7 @@ def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool =
 # If I face more memory issues:
 # 1. lower the size of the numbers/ files
 # 2. lower the size of this image
+# This is both slow and ugly.
 def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image.Image:
     picdict = {}
     DIRECTORY = 'numbers/'
