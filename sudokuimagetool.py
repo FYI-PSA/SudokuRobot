@@ -364,7 +364,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False, debug: b
     checked_side = False
     side = 0
     for n in range(0, 10):
-        print(f'do u crash here? {n}')
+        # print(f'do u crash here? {n}')
         key = f'{n}.png'
         image = Image.open(DIRECTORY+key)
         image = ImageOps.expand(image, border=37, fill='white')
@@ -384,7 +384,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False, debug: b
         col = i % 9
         c_tile = picdict[f'{n}.png']
         image.paste(c_tile, (col*side, row*side))
-        print(f'do u crash here? {i}')
+        # print(f'do u crash here? {i}')
     image = ImageOps.expand(image, border=18, fill='black')
     image = image.resize(size, Image.LANCZOS)
     if mostly_black:
