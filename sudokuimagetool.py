@@ -236,7 +236,7 @@ def clean_tile(grayscale_tile: np.ndarray) -> np.ndarray:
 def rectangles_to_square_image(rectangle_boxes: list, rgb_image: np.ndarray, debug: bool = False) -> Tuple[Image.Image, Tuple[int, int, int, int]]:
     boundingbox_square = largest_square_bounding_from_list_of_rectangles(rectangle_boxes, debug=debug)
     corrected_boundary = ensure_square_boundary(boundingbox_square)  # ensures that width and height are the exact same number, takes an average weighted more towards the bigger guy
-    square_image = extract_square_boundary_to_image(corrected_boundary, rgb_image, debug=debug)
+    square_image = extract_square_boundary_to_image(corrected_boundary, rgb_image)
     # print(f'bb: {boundingbox_square}\ncorrected: {corrected_boundary}\nimgshape: {np.shape(square_image)}\n\n')
     return (square_image, corrected_boundary)
 
