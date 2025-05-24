@@ -53,6 +53,7 @@ def exit_handler():
         os.remove(KEY)
     else:
         print(f"no lock while quitting.")
+    print('Program shut down.')
 
 
 atexit.register(exit_handler)
@@ -60,7 +61,7 @@ atexit.register(exit_handler)
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-
+print('importing the important stuff')
 import socket
 import threading
 # import requests
@@ -131,6 +132,7 @@ async def help(update, context):
     print(f"User info:\n{user_profile}")
 
 
+print('importing the heart of the project, including tensorflow...')
 import servermain
 from tilereader import grayscale_numpy_tiles_list_to_predicted_integer_list as predict_grayscale_func, load_model as load_model
 AImodel = load_model()
