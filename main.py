@@ -196,6 +196,8 @@ async def process_image(update, context):
             'Sending as a message instead.')
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, reply_to_message_id=update.message.message_id)
         gridstr = servermain.gridstring(solved_grid)
+        print(f'gridstring recieved, {gridstr}')
+        servermain.gridprint(solved_Grid)
         await context.bot.send_message(chat_id=update.effective_chat.id, text=gridstr, reply_to_message_id=update.message.message_id)
         return
     else:
