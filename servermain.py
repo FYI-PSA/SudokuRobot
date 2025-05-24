@@ -26,7 +26,7 @@ def gridstring(grid):
     padlen = max(widest_item_lengths_per_row) + 1
     gaplen = round(padlen*1.1)
     gridstr = ''
-    for row_i, row in enumerate(gridstr):
+    for row_i, row in enumerate(grid):
         for col_j, item_ in enumerate(row):
             item = str(item_)
             gridstr += item
