@@ -2,12 +2,15 @@ import numpy as np
 import sys
 import cv2
 
-IMGSIZE = 512
+# IMGSIZE = 512
+# too heavy
+IMGSIZE = 216
 
 # Create a 0(black) grayscale image 512x512 pixels 
 background = np.zeros((IMGSIZE, IMGSIZE, 1), dtype=np.uint8)
 font_color = 255
-thickness = 44
+# thickness = 44
+thickness = 17
 try:
     thickness = int(sys.argv[1])
 except Exception as e:
