@@ -193,7 +193,7 @@ async def process_image(update, context):
         pass
     elif success and (not (possible_err_name is None)):
         response: str = ('Solving the grid was done successfully, but there was an error while attempting to make it into an image.\n'
-            'Please report the admin @FYI_PSA.\n'
+            'Please report the admin @FYI_PSA\n'
             'Sending your solved puzzle as a message instead.')
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, reply_to_message_id=update.message.message_id)
         servermain.gridprint(solved_grid)
