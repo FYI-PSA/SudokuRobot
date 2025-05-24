@@ -2,6 +2,7 @@ import numpy as np
 from PIL import Image, ImageOps
 import cv2
 from copy import deepcopy
+from typing import Tuple, List
 # from matplotlib import pyplot as plt
 
 import gc
@@ -22,31 +23,14 @@ class plot():
 plt = plot()
 
 
-# def grayscale_to_binary(image: np.ndarray, debug: bool = False, thresh: float = 0.3):
-#     valuearr = np.asanyarray(image, dtype=np.uint8)
-#     fractionarr = valuearr / 255.0  # it's a black and white image so the numbers are 0-255, so if I divide by this, it's gonna be 0-1
-#     treshholded = np.where(fractionarr > thresh, 1.0, 0.0)
-#     if debug:
-#         treshhold_img = treshholded * 255.0
-#         plt.imshow(treshhold_img, cmap='Greys')
-#         plt.show()
-#     return treshholded
-
-
-def rgb_image_from_file(fname: str, debug: bool = False) -> Image.Image:
+def rgb_image_from_file(fname: str) -> Image.Image:
     img = Image.open(fname)
     img = img.convert('RGB')
-    if debug:
-        plt.imshow(img)
-        plt.show()
     return img
 
 
-def image_to_grayscale(rgb_img: np.ndarray, debug: bool = False):
+def image_to_grayscale(rgb_img: np.ndarray):
     img = rgb_img.convert('L')
-    if debug:
-        plt.imshow(img, cmap='Greys')
-        plt.show()
     return np.asarray(img, dtype=np.uint8)
 
 
@@ -80,26 +64,18 @@ def recognition_blur(firstthresh: np.ndarray) -> np.ndarray:
     return blurred
 
 
-def rgb_image_to_inverse_treshholded_grayscale(rgb_image: np.ndarray, purpose: str = 'detect', blurdiff: int = 0, debug: bool = False, moredebug: bool = False):
+def rgb_image_to_inverse_treshholded_grayscale(rgb_image: np.ndarray, purpose: str = 'detect', blurdiff: int = 0, debug: bool = False):
     # my solution to this section
-    
-    # firstthresh = grayscale_to_binary(image_to_grayscale(debug=True), debug=True, thresh=0.7) * 255.0
-    # image_to_grayscale returns black in bg and white in fg
     
     threshhold, firstthresh = cv2.threshold(image_to_grayscale(rgb_image), 0.0, 255.0, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
     # otsu's method find a midrange average by averaging the most and the least (+ other math opts probably)
     # the inv_binary_threshhold just makes a black and white image with black in the background to threshhold at 50% with white in the background instead
-    # much better than my grayscale_to_binary function, so I won't use that any longer.
     
     if purpose == 'detect':
         blurred = detection_blur(firstthresh, blurdiff)
-        if debug:
-            print("detection blur")
     else:
         blurred = recognition_blur(firstthresh)
-        if debug:
-            print("recognition blur")
 
     # threshhold, secondthresh = cv2.threshold(firstthresh, 0.0, 255.0, cv2.THRESH_BINARY + cv2.THRESH_OTSU)  # I have 0 clue why I made it blurred just to not use it?? I need to use blur, sometimes I'm stupid.
     threshhold, secondthresh = cv2.threshold(blurred, 0.0, 255.0, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
@@ -110,7 +86,7 @@ def rgb_image_to_inverse_treshholded_grayscale(rgb_image: np.ndarray, purpose: s
     
     secondthresh = np.asarray(secondthresh, dtype=np.uint8)
 
-    if debug and moredebug:  # simply because sometimes it's annoying.
+    if debug:  # simply because sometimes it's annoying.
         plt.title('blurred first step')
         plt.imshow(blurred, cmap='Greys')
         plt.show()
@@ -130,10 +106,9 @@ def rectangle_contours_from_inverse_threshholded_image(threshholded_img: np.ndar
     
     w, h = np.shape(threshholded_img)[0:2]
     
-    if debug:
-        print(f"Count of contours: {len(contours)}")
-    
     rectangles = [(0, 0, w, h)]
+    if debug:
+        print(f'Base rectanlge: The image itself: {[i for i in rectangles[0]]}')
     for c in contours:
         # get the information of the contour box
         x, y, w, h = cv2.boundingRect(c)
@@ -143,9 +118,9 @@ def rectangle_contours_from_inverse_threshholded_image(threshholded_img: np.ndar
         if (w*h) > 8192:  # larger area than a rougly 90 x 90 square
             # needs to be large enough to filter out to compensate for all of the contours found.
             rectangles.append(cv2.boundingRect(c))
-    if debug:
-        print(f"Count of rectangles: {len(rectangles)}")
-        print(rectangles)
+            if debug:
+                print(f'New rectangle: {[i for i in rectangles[-1]]}')
+    
     return rectangles
 
 
@@ -176,7 +151,7 @@ def largest_square_bounding_from_list_of_rectangles(rectangles: list, debug: boo
     return largest_square
 
 
-def ensure_square_boundary(semisqaure_boundary: tuple) -> tuple:  # makes it fully equal if they're off by a tiny bit
+def ensure_square_boundary(semisqaure_boundary: tuple) -> Tuple[int, int, int, int]:  # makes it fully equal if they're off by a tiny bit
     x, y, w, h = semisqaure_boundary
     delta = abs(w-h)
     ratio = max([delta/w, delta/h])
@@ -212,14 +187,10 @@ def debug_draw_mask_to_original_image(mask: np.ndarray, rgb_original_img: np.nda
     plt.show()
 
 
-def extract_square_boundary_to_image(square_bounding: tuple, rgb_original_img: np.ndarray, debug: bool = True) -> np.ndarray:
+def extract_square_boundary_to_image(square_bounding: tuple, rgb_original_img: np.ndarray) -> Image.Image:
     x, y, w, h = square_bounding
     square = np.asarray(rgb_original_img, dtype=np.uint8)[y:y+h, x:x+h]
     square = Image.fromarray(square)
-    if debug:
-        plt.title('a recognised large square grid')
-        plt.imshow(square)
-        plt.show()
     return square
 
 
@@ -262,7 +233,7 @@ def clean_tile(grayscale_tile: np.ndarray) -> np.ndarray:
     return resized_borderless
 
 
-def rectangles_to_square_image(rectangle_boxes: list, rgb_image: np.ndarray, debug: bool = False) -> tuple:
+def rectangles_to_square_image(rectangle_boxes: list, rgb_image: np.ndarray, debug: bool = False) -> Tuple[Image.Image, Tuple[int, int, int, int]]:
     boundingbox_square = largest_square_bounding_from_list_of_rectangles(rectangle_boxes, debug=debug)
     corrected_boundary = ensure_square_boundary(boundingbox_square)  # ensures that width and height are the exact same number, takes an average weighted more towards the bigger guy
     square_image = extract_square_boundary_to_image(corrected_boundary, rgb_image, debug=debug)
@@ -270,7 +241,7 @@ def rectangles_to_square_image(rectangle_boxes: list, rgb_image: np.ndarray, deb
     return (square_image, corrected_boundary)
 
 
-def debug_display_rectangles(rectangle_boxes: list, rgb_image, IWANTMOREDEBUG: bool = False):
+def debug_display_rectangles(rectangle_boxes: list, rgb_image):
     c = 1
     t = len(rectangle_boxes)
     for b in rectangle_boxes:
@@ -280,7 +251,7 @@ def debug_display_rectangles(rectangle_boxes: list, rgb_image, IWANTMOREDEBUG: b
         c += 1
 
 
-def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool = False, moredebug: bool = False, mostdebug: bool = False, IWANTMOREDEBUG: bool = False) -> list:
+def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool = False, moredebug: bool = False) -> list:
     rgb_image = rgb_image_from_file(filename)
     
     blurmode = 0
@@ -297,14 +268,14 @@ def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool =
     largest_square_mode = -1
     while not finish:
         try:
-            threshholded_grayscale_image = rgb_image_to_inverse_treshholded_grayscale(rgb_image, purpose='detect', blurdiff=blurmode, debug=debug, moredebug=moredebug)
+            threshholded_grayscale_image = rgb_image_to_inverse_treshholded_grayscale(rgb_image, purpose='detect', blurdiff=blurmode, debug=debug)
             rectangle_boxes = rectangle_contours_from_inverse_threshholded_image(threshholded_grayscale_image, debug=debug)
             count = len(rectangle_boxes)
             if count == max(most_count, count):
                 most_count = count
                 most_rects = deepcopy(rectangle_boxes)
                 best_mode = deepcopy(blurmode)
-            square_image, square_properties = rectangles_to_square_image(rectangle_boxes, rgb_image, debug=mostdebug)
+            square_image, square_properties = rectangles_to_square_image(rectangle_boxes, rgb_image, debug=moredebug)
             x, y, w, h = square_properties
             if w > largest_square[2] and (h == w):
                 largest_square = deepcopy(square_properties)
@@ -326,17 +297,17 @@ def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool =
     if not success:
         if debug:
             print(f"Unsuccessful. Displaying the most amount of rectangles ({most_count}) that was accuired during mode {best_mode}")    
-            debug_display_rectangles(most_rects, rgb_image, IWANTMOREDEBUG)
+            debug_display_rectangles(most_rects, rgb_image)
         raise BadImageException("Your image didn't have any shapes almost resembling a square or a grid.\nThis could be an issue of too-similarly colored edges on the boxes, or a low quality image.")
 
     if debug:
         print(f"At least one grid was recognised using blur mode(s) {largest_square_mode} and {best_mode}! Woo hoo!")
     
-    if debug and mostdebug:
+    if debug and moredebug:
         print(f"*Most* rectangles found but not neccasarily the biggest square in them: Mode {largest_square_mode}")
-        debug_display_rectangles(most_rects, rgb_image, IWANTMOREDEBUG)
+        debug_display_rectangles(most_rects, rgb_image)
         print(f"*Biggest* square found but not neccasarily the most rectangles in them: Mode {largest_square_mode}")
-        debug_display_rectangles(largest_square_rectangles, rgb_image, IWANTMOREDEBUG)
+        debug_display_rectangles(largest_square_rectangles, rgb_image)
     
     if debug:
         plt.title("Largest recognised square in all of the image:")
@@ -346,7 +317,7 @@ def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool =
         debug_draw_mask_to_original_image(square_mask, rgb_image)
     
     grid = largest_square_image
-    inverse_clean_grid = rgb_image_to_inverse_treshholded_grayscale(grid, purpose='recognise', debug=debug, moredebug=moredebug)
+    inverse_clean_grid = rgb_image_to_inverse_treshholded_grayscale(grid, purpose='recognise', debug=debug)
     borderless_inverse_clean_grid = remove_border_pixels(inverse_clean_grid, margin_percent=0.5)
     tiles: list = split_square_to_81(borderless_inverse_clean_grid)
     clean_tiles: list = list(map(clean_tile, tiles))
@@ -362,7 +333,6 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
     checked_side = False
     side = 0
     for n in range(0, 10):
-        # print(f'do u crash here? {n}')
         key = f'{n}.png'
         image = Image.open(DIRECTORY+key)
         image = ImageOps.expand(image, border=48, fill='white')
@@ -373,15 +343,13 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         picdict.update({key: image})
     gc.collect()
     initial_size = (side*9, side*9)
-    if debug:
-        print(f"size before resize: {initial_size}")
-    image = Image.new('RGB', initial_size)
+    print(f"size before resize: {initial_size}")
+    image: Image.Image = Image.new('RGB', initial_size)
     for i, n in enumerate(tiles):
         row = i // 9
         col = i % 9
         c_tile = picdict[f'{n}.png']
         image.paste(c_tile, (col*side, row*side))
-        # print(f'do u crash here? {i}')
     image = ImageOps.expand(image, border=18, fill='black')
     image = image.resize(size, Image.LANCZOS)
     if mostly_black:
@@ -389,8 +357,8 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
     return image
 
 
-def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list) -> tuple: 
-    org_rgb_image = rgb_image_from_file(filename)
+def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list) -> Tuple[Tuple[int, int, int, int], Image.Image, Image.Image, bool]: 
+    org_rgb_image: Image.Image = rgb_image_from_file(filename)
     rgb_image = deepcopy(org_rgb_image)
     blurmode = 0
     success = False
@@ -443,21 +411,11 @@ def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list)
 
 def write_solved_grid_to_original_image(newfilename: str, largest_square: tuple, solved_grid: Image.Image, org_rgb_image: np.ndarray, mostly_black):
     x, y, w, h = largest_square
-    # print(f'x {x}  y {y}  w {w}  h {h}')
-    # print(np.shape(solved_grid))
-    # print(np.shape(org_rgb_image))
-    
-    # solved_grid = generate_grid(tiles=tile_list, size=grid_size, mostly_black=mostly_black, debug=debug)
+
     solved_grid = solved_grid.resize((w, h), Image.LANCZOS)
 
     if mostly_black:
         solved_grid = ImageOps.invert(solved_grid)
-
-    # solved_grid = generate_grid(tiles=tile_list, size=grid_size, mostly_black=mostly_black, debug=debug)
-    # solved_image = np.asarray(deepcopy(org_rgb_image), dtype=np.uint8).copy()
-    # x, y, w, h = largest_square
-    # solved_image[y:y+h, x:x+h] = np.asarray(deepcopy(solved_grid), dtype=np.uint8).copy()
-    # solved_image = Image.fromarray(solved_image)
 
     solved_grid_np = np.asarray(deepcopy(solved_grid), dtype=np.uint8).copy()
     solved_image_np = np.asarray(deepcopy(org_rgb_image), dtype=np.uint8).copy()
@@ -477,11 +435,10 @@ def main() -> None:
     
     gridimagefilename = 'grid_solved.png'
     test_tiles = [((i%9)+(i//9))%10 for i in range(1, 82)]
-    
-    gridimage = write_solved_grid_to_image(newfilename=gridimagefilename, filename=filename, tile_list=test_tiles, debug=True, moredebug=False)
-    
+    square_properties, solved_grid_image, original_image, ismostlyblack = write_solved_grid_to_image(newfilename=gridimagefilename, filename=filename, tile_list=test_tiles)
+
     solvedimagefilename = 'screenshot_solved.png'
-    solvedimage = write_solved_grid_to_original_image(newfilename=solvedimagefilename, filename=filename, tile_list=test_tiles, debug=True, moredebug=False)
+    solvedimage = write_solved_grid_to_original_image(newfilename=solvedimagefilename, largest_square=square_properties, solved_grid=solved_grid_image, org_rgb_image=original_image, mostly_black=ismostlyblack)
 
 
 if __name__ == '__main__':

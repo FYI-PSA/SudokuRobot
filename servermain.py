@@ -21,24 +21,29 @@ def getfilenameinfo(fname: str) -> tuple:
     return (actualname, ext)
 
 
-def gridprint(grid):
+def gridstring(grid):
     widest_item_lengths_per_row = [max([len(str(item)) for item in row]) for row in grid] 
-    padlen = max(widest_item_lengths_per_row) + 2
-    gaplen = round(padlen*1.2)
-    grid = ''
-    for row_i, row in enumerate(grid):
+    padlen = max(widest_item_lengths_per_row) + 1
+    gaplen = round(padlen*1.1)
+    gridstr = ''
+    for row_i, row in enumerate(gridstr):
         for col_j, item_ in enumerate(row):
             item = str(item_)
-            grid += item
-            grid += str(' ' * (padlen - len(item)))
+            gridstr += item
+            gridstr += str(' ' * (padlen - len(item)))
             if col_j == 8:
                 continue
             if (col_j % 3) == 2:
-                grid += str(' ' * (gaplen))
+                gridstr += str(' ' * (gaplen))
         if (row_i % 3) == 2:
-            grid += str('\n\n')
-        grid+= str('\n')
-    print(grid)
+            gridstr += str('\n\n')
+        gridstr += str('\n')
+    return gridstr
+
+
+def gridprint(grid):
+    gridstr = gridstring(grid)
+    print(gridstr)
 
 
 def colored(text, color):
@@ -333,14 +338,18 @@ def servermain(filename, AImodel, predict_grayscale_func):
                             "- <b>The program</b>\n"
                             "    <blockquote> If your image and puzzle are both correct and visible, report this issue to the admin on Telegram: <a href='https://t.me/FYI_PSA/'>@FYI_PSA</a> </blockquote>\n"
                             "")
-        return(False, gridname, solvedname, GRID, str(err_message_html), 'CouldNotBeSolved', 309)
+        return (False, gridname, solvedname, GRID, str(err_message_html), 'CouldNotBeSolved', 309)
     gc.collect()
     solved_tiles = []
     for row in GRID:
         solved_tiles.extend(row)
     print(f'desolved grid to {solved_tiles}')
     GRID = solved_tiles
-    write_grid_to_gridjpg(solved_tiles, filename, solvedname, gridname)   
+    try:
+        write_grid_to_gridjpg(solved_tiles, filename, solvedname, gridname)   
+    except Exception as err:
+        print('write to file failed with an error')
+        return (True, gridname, solvedname, GRID, str(err), type(err).__name__, sys.exc_info()[-1].tb_lineno)
     print('going home...')
     return (True, gridname, solvedname, GRID, None, None, None)
 

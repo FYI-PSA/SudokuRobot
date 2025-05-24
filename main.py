@@ -189,6 +189,13 @@ async def process_image(update, context):
     if success and (possible_err_name is None):
         # await context.bot.send_message(chat_id=update.effective_chat.id, text="Excellent", reply_to_message_id=update.message.message_id)
         pass
+    elif success and (not (possible_err_name is None)):
+        response: str = ('Solving the grid was done successfully, but there was an error while attempting to make it into an image.\n'
+            'Sending as a message instead.')
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=response, reply_to_message_id=update.message.message_id)
+        gridstr = servermain.gridstring(solved_grid)
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=gridstr, reply_to_message_id=update.message.message_id)
+        return
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"<b>I can't solve this.</b>\n\n{possible_err_details}", reply_to_message_id=update.message.message_id, parse_mode='HTML')
         
