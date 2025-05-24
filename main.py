@@ -150,8 +150,8 @@ def get_or_create_eventloop():
             return asyncio.get_event_loop()
         else:
             print("Error in setting the event loop to a previously existing one?")
-            print("failure...")
-            raise ex
+            print(f"{e}")
+            raise e
 
 
 async def echo(update, context):
