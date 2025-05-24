@@ -183,7 +183,8 @@ async def process_image(update, context):
     print("yay i passed the server thing!")
     
     if success and (possible_err_name is None):
-        await context.bot.send_message(chat_id=update.effective_chat.id, text="Excellent", reply_to_message_id=update.message.message_id)
+        # await context.bot.send_message(chat_id=update.effective_chat.id, text="Excellent", reply_to_message_id=update.message.message_id)
+        pass
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"<b>I can't solve this.</b>\n\n{possible_err_details}", reply_to_message_id=update.message.message_id, parse_mode='HTML')
         
