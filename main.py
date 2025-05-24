@@ -172,17 +172,19 @@ async def process_image(update, context):
     time.sleep(1)
     img_file_name = str(img_file_name)
     print(f"Saved the file as {img_file_name}")
+    response_tuple = servermain.servermain(
+         AImodel=AImodel,
+         filename=img_file_name,
+         predict_grayscale_func=predict_grayscale_func
+    )
+    print(response_tuple)
     (success,
      solvedgridfilename,
      solvedimagefilename,
      solved_grid,
      possible_err_details,
      possible_err_name,
-     possible_err_line ) = servermain.servermain(
-         AImodel=AImodel,
-         filename=img_file_name,
-         predict_grayscale_func=predict_grayscale_func
-     )
+     possible_err_line ) = response_tuple
 
     print("yay i passed the server thing!")
     
