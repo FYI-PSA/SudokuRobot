@@ -186,7 +186,7 @@ async def process_image(update, context):
      possible_err_name,
      possible_err_line ) = response_tuple
 
-    print("yay i passed the server thing!")
+    print("Woohoo! The heart beat and did its thing!")
     
     if success and (possible_err_name is None):
         # await context.bot.send_message(chat_id=update.effective_chat.id, text="Excellent", reply_to_message_id=update.message.message_id)
@@ -195,8 +195,6 @@ async def process_image(update, context):
         response: str = ('Solving the grid was done successfully, but there was an error while attempting to make it into an image.\n'
             'Sending as a message instead.')
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, reply_to_message_id=update.message.message_id)
-        gridstr = servermain.gridstring(solved_grid)
-        print(f'gridstring recieved, {gridstr}')
         servermain.gridprint(solved_Grid)
         await context.bot.send_message(chat_id=update.effective_chat.id, text=gridstr, reply_to_message_id=update.message.message_id)
         return

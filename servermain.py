@@ -344,7 +344,8 @@ def servermain(filename, AImodel, predict_grayscale_func):
     for row in GRID:
         solved_tiles.extend(row)
     print(f'desolved grid to {solved_tiles}')
-    GRID = solved_tiles
+    # GRID = solved_tiles
+    # don't do this. I want to use gridprint in main in case the image gen fails.
     try:
         write_grid_to_gridjpg(solved_tiles, filename, solvedname, gridname)   
     except Exception as err:
