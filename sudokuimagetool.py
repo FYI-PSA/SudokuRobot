@@ -455,6 +455,9 @@ def write_solved_grid_to_original_image(newfilename: str, largest_square: tuple,
     print(np.shape(org_rgb_image))
     # solved_grid = generate_grid(tiles=tile_list, size=grid_size, mostly_black=mostly_black, debug=debug)
     solved_grid = solved_grid.resize((w, h), Image.LANCZOS)
+    print(f'x {x}  y {y}  w {w}  h {h}')
+    print(np.shape(solved_grid))
+    print(np.shape(org_rgb_image))
     if mostly_black:
         solved_grid = ImageOps.invert(solved_grid)
     solved_image = np.asarray(org_rgb_image, dtype=np.uint8).copy()
