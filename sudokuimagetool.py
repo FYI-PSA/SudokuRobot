@@ -180,7 +180,7 @@ def ensure_square_boundary(semisqaure_boundary: tuple) -> tuple:  # makes it ful
     x, y, w, h = semisqaure_boundary
     delta = abs(w-h)
     ratio = max([delta/w, delta/h])
-    if ratio < 0.251:  # this is just in case a rectangle gets passed to it for some reason
+    if ratio < 0.1:  # this is just in case a rectangle gets passed to it for some reason
         # w = max([w, h])  # increase the lower one, because it's easier to read with wall noise than to read half a digit
         # why not make it their average
         # and im pretty confident in myself, lets average it twice.
@@ -421,7 +421,6 @@ def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list)
                 most_mode = blurmode
             square_image, square_properties = rectangles_to_square_image(rectangle_boxes, org_rgb_image)
             x, y, w, h = square_properties
-            # if w > largest_square[2] and (h == w):
             if w > largest_square[2]:
                 largest_square = deepcopy(square_properties)
                 largest_square_image = deepcopy(square_image)
@@ -450,16 +449,15 @@ def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list)
 
 
 def write_solved_grid_to_original_image(newfilename: str, largest_square: tuple, solved_grid: Image.Image, org_rgb_image: np.ndarray, mostly_black):
-    
     x, y, w, h = largest_square
-    
+    print(f'x {x}  y {y}  w {w}  h {h}')
+    print(np.shape(solved_grid))
+    print(np.shape(org_rgb_image))
     # solved_grid = generate_grid(tiles=tile_list, size=grid_size, mostly_black=mostly_black, debug=debug)
     solved_grid = solved_grid.resize((w, h), Image.LANCZOS)
     if mostly_black:
         solved_grid = ImageOps.invert(solved_grid)
-    
     solved_image = np.asarray(org_rgb_image, dtype=np.uint8).copy()
-
     solved_image[y:y+h, x:x+w] = np.asarray(solved_grid, dtype=np.uint8).copy()
     solved_image = Image.fromarray(solved_image)
     solved_image.save(newfilename)
