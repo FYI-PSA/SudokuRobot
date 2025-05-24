@@ -139,15 +139,17 @@ print('ai model loaded.')
 
 def get_or_create_eventloop():
     try:
-        print("Creating new loop...")
+        print("Creating new event loop...")
         return asyncio.get_event_loop()
     except Exception as e:
         print("Caught one: {e}")
         if "no current event loop" in str(e):
+            print("Setting existing event loop...")
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             return asyncio.get_event_loop()
         else:
+            print("Error in setting the event loop to a previously existing one?")
             print("failure...")
             raise ex
 
