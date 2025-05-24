@@ -25,18 +25,20 @@ def gridprint(grid):
     widest_item_lengths_per_row = [max([len(str(item)) for item in row]) for row in grid] 
     padlen = max(widest_item_lengths_per_row) + 2
     gaplen = round(padlen*1.2)
+    grid = ''
     for row_i, row in enumerate(grid):
         for col_j, item_ in enumerate(row):
             item = str(item_)
-            print(item, end='')
-            print(' ' * (padlen - len(item)), end='')
+            grid += item
+            grid += str(' ' * (padlen - len(item)))
             if col_j == 8:
                 continue
             if (col_j % 3) == 2:
-                print(' ' * (gaplen), end='')
+                grid += str(' ' * (gaplen))
         if (row_i % 3) == 2:
-            print('\n')
-        print('')
+            grid += str('\n\n')
+        grid+= str('\n')
+    print(grid)
 
 
 def colored(text, color):
@@ -278,6 +280,7 @@ def main(model, filename, predict_grayscale_func) -> int:  # main thing with all
     print("\n")
     print(colored("Unsolved Grid:\n", "blue"))
     # gridprint(GRID)
+    gridprint(GRID)
     print("\n")
     couldbesolved, GRID = GuessworkSolve(GRID, debug=False)  # no debug
     et = time.time()
@@ -293,6 +296,7 @@ def main(model, filename, predict_grayscale_func) -> int:  # main thing with all
     print("\n")
     print(colored("Solved Grid:\n", "green"))
     # gridprint(GRID)
+    gridprint(GRID)
     print("\n")
     return 0
 
