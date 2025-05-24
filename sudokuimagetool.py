@@ -369,6 +369,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False, debug: b
         image = ImageOps.expand(image, border=18, fill='black')
         if not checked_side:
             side = image.width
+            checked_side = True
         picdict.update({key: image})
     initial_size = (side*9, side*9)
     if debug:
