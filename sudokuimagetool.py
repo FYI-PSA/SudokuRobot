@@ -186,6 +186,7 @@ def ensure_square_boundary(semisqaure_boundary: tuple) -> tuple:  # makes it ful
         # and im pretty confident in myself, lets average it twice.
         w = int((h+w)/2)
         w = int((h+w)/2)
+        w = w - 2
         h = w
     else:
         print("NOT A SQUARE?! BLASPHEMY!")
