@@ -184,7 +184,7 @@ def ensure_square_boundary(semisqaure_boundary: tuple) -> tuple:  # makes it ful
         # w = max([w, h])  # increase the lower one, because it's easier to read with wall noise than to read half a digit
         # why not make it their average
         # and im pretty confident in myself, lets average it twice.
-        w = int((((3*h)+w)/2))
+        w = int((((3*h)+w)/4))
         h = w
     else:
         print("NOT A SQUARE?! BLASPHEMY!")
