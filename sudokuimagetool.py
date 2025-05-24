@@ -438,6 +438,8 @@ def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list)
     if not success:
         raise BadImageException("Your image didn't have any shapes almost resembling a square or a grid.\nThis could be an issue of too-similarly colored edges on the boxes, or a low quality image.")
     grid = largest_square_image
+    print(np.shape(grid)[0:2])
+    print('^ grid shape')
     mostly_black = False
     if np.average(grid) < (255.0/2.1):
         mostly_black = True
@@ -450,25 +452,32 @@ def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list)
 
 def write_solved_grid_to_original_image(newfilename: str, largest_square: tuple, solved_grid: Image.Image, org_rgb_image: np.ndarray, mostly_black):
     x, y, w, h = largest_square
-    
     # print(f'x {x}  y {y}  w {w}  h {h}')
     # print(np.shape(solved_grid))
     # print(np.shape(org_rgb_image))
     
     # solved_grid = generate_grid(tiles=tile_list, size=grid_size, mostly_black=mostly_black, debug=debug)
     solved_grid = solved_grid.resize((w, h), Image.LANCZOS)
+    print((w,h))
+    print('^ grid shape, important function')
+
     if mostly_black:
         solved_grid = ImageOps.invert(solved_grid)
-        
-    solved_grid = np.asarray(solved_grid, dtype=np.uint8).copy()
-    solved_image = np.asarray(org_rgb_image, dtype=np.uint8).copy()
 
-    # print(f'x {x}  y {y}  w {w}  h {h}')
-    # print(f'solved grid  {np.shape(solved_grid)}')
-    # print(f'solved image {np.shape(solved_image)}')
-    
-    solved_image[y:y+h, x:x+w] = solved_grid
-    solved_image = Image.fromarray(solved_image)
+    # solved_grid = generate_grid(tiles=tile_list, size=grid_size, mostly_black=mostly_black, debug=debug)
+    # solved_image = np.asarray(deepcopy(org_rgb_image), dtype=np.uint8).copy()
+    # x, y, w, h = largest_square
+    # solved_image[y:y+h, x:x+h] = np.asarray(deepcopy(solved_grid), dtype=np.uint8).copy()
+    # solved_image = Image.fromarray(solved_image)
+
+    solved_grid_np = np.asarray(deepcopy(solved_grid), dtype=np.uint8).copy()
+    solved_image_np = np.asarray(deepcopy(org_rgb_image), dtype=np.uint8).copy()
+    print(f'x {x}  y {y}  w {w}  h {h}')
+    print(f'solved grid  {np.shape(solved_grid_np)}')
+    print(f'solved image {np.shape(solved_image_np)}')
+    solved_image_np[y:y+h, x:x+w] = solved_grid_np
+
+    solved_image = Image.fromarray(solved_image_np)
     solved_image.save(newfilename)
     gc.collect()
     return deepcopy(solved_image)
