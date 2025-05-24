@@ -4,21 +4,25 @@ import cv2
 
 # IMGSIZE = 512
 # too heavy
-IMGSIZE = 216
+# IMGSIZE = 216
+# still too heavy
+IMGSIZE = 128
 
 # Create a 0(black) grayscale image 512x512 pixels 
 background = np.zeros((IMGSIZE, IMGSIZE, 1), dtype=np.uint8)
 font_color = 255
 # thickness = 44
-thickness = 17
+# thickness = 17
+thickness = 9
+target = 0.87
+# target = 0.74
+
 try:
     thickness = int(sys.argv[1])
 except Exception as e:
     pass
 print(thickness)
 line_type = cv2.LINE_AA
-# target = 0.87
-target = 0.74
 limit = target * IMGSIZE
 origin_should_be_bottom_left = False # if false, instead its in the top left
 
