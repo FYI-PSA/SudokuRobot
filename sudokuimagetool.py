@@ -184,9 +184,7 @@ def ensure_square_boundary(semisqaure_boundary: tuple) -> tuple:  # makes it ful
         # w = max([w, h])  # increase the lower one, because it's easier to read with wall noise than to read half a digit
         # why not make it their average
         # and im pretty confident in myself, lets average it twice.
-        w = int((h+w)/2)
-        w = int((h+w)/2)
-        w = w - 2
+        w = int((((3*h)+w)/2))
         h = w
     else:
         print("NOT A SQUARE?! BLASPHEMY!")
@@ -400,6 +398,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False, debug: b
 
 def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list) -> tuple: 
     org_rgb_image = rgb_image_from_file(filename)
+    rgb_image = deepcopy(org_rgb_image)
     blurmode = 0
     success = False
     badimage = False
@@ -413,14 +412,14 @@ def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list)
     largest_square_mode = -1
     while not finish:
         try:
-            threshholded_grayscale_image = rgb_image_to_inverse_treshholded_grayscale(org_rgb_image, purpose='detect', blurdiff=blurmode)
+            threshholded_grayscale_image = rgb_image_to_inverse_treshholded_grayscale(rgb_image, purpose='detect', blurdiff=blurmode)
             rectangle_boxes = rectangle_contours_from_inverse_threshholded_image(threshholded_grayscale_image)
             count = len(rectangle_boxes)
             if count == max(most_count, count):
                 most_count = count
                 most_rects = deepcopy(rectangle_boxes)
                 most_mode = blurmode
-            square_image, square_properties = rectangles_to_square_image(rectangle_boxes, org_rgb_image)
+            square_image, square_properties = rectangles_to_square_image(rectangle_boxes, rgb_image)
             x, y, w, h = square_properties
             if w > largest_square[2]:
                 largest_square = deepcopy(square_properties)
@@ -452,9 +451,9 @@ def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list)
 def write_solved_grid_to_original_image(newfilename: str, largest_square: tuple, solved_grid: Image.Image, org_rgb_image: np.ndarray, mostly_black):
     x, y, w, h = largest_square
     
-    print(f'x {x}  y {y}  w {w}  h {h}')
-    print(np.shape(solved_grid))
-    print(np.shape(org_rgb_image))
+    # print(f'x {x}  y {y}  w {w}  h {h}')
+    # print(np.shape(solved_grid))
+    # print(np.shape(org_rgb_image))
     
     # solved_grid = generate_grid(tiles=tile_list, size=grid_size, mostly_black=mostly_black, debug=debug)
     solved_grid = solved_grid.resize((w, h), Image.LANCZOS)
@@ -464,9 +463,9 @@ def write_solved_grid_to_original_image(newfilename: str, largest_square: tuple,
     solved_grid = np.asarray(solved_grid, dtype=np.uint8).copy()
     solved_image = np.asarray(org_rgb_image, dtype=np.uint8).copy()
 
-    print(f'x {x}  y {y}  w {w}  h {h}')
-    print(f'solved grid  {np.shape(solved_grid)}')
-    print(f'solved image {np.shape(solved_image)}')
+    # print(f'x {x}  y {y}  w {w}  h {h}')
+    # print(f'solved grid  {np.shape(solved_grid)}')
+    # print(f'solved image {np.shape(solved_image)}')
     
     solved_image[y:y+h, x:x+w] = solved_grid
     solved_image = Image.fromarray(solved_image)
