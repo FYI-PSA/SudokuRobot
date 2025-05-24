@@ -220,12 +220,17 @@ async def error_handler(update, context):
         print("Conflict happening. Peace time!\n")
         time.sleep(10)
         print("Is the conflict persisting after this?\n")
+        return
     else:
         logging.info('\n\n')
-        logging.error(f"An unexpected exception, you should investigate: {err}") 
-        errline = sys.exc_info()[-1].tb_lineno
-        print(f"Error line: {errline}")
+        logging.error(f"An unexpected exception, you should investigate: {err}")
+        error = sys.exc_info()[-1]
+        if error is None:
+            print(f'Was not a exception from the code apparently.')
+        else:
+            print(f'Was indeed a valid exception, line {error.tb_lineno}')
         print('\n\n')
+        return
 
 
 def main(token, adminid):
