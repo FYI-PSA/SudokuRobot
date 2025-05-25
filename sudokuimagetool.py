@@ -344,7 +344,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         # image = ImageOps.expand(image, border=border_thick, fill='white')
         # this is a cool pattern but it looks freaky so i'll remove it.
         if not checked_side:
-            side = image.width + 5
+            side = image.width + 20
             checked_side = True
         picdict.update({key: image})
     
@@ -359,9 +359,6 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         col = i % 9
         c_tile = picdict[f'{n}.png']
         
-        # what the hell is wrong?
-        print(row, col)
-
         new_tile = np.asarray(c_tile, dtype=np.uint8)[:, :, [2, 1, 0]]  # BGR mode for CV2
         
         # cv2.copyMakeBorder order: top bottom left right
@@ -386,19 +383,19 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
             mark_edge[0] = True
             # top
 
-        black_edges = [0]*4
-        white_edges = [0]*4
-        for index, mark in enumerate(mark_edge):
-            if mark:
-                black_edges[index] = thicker_edge
-            else:
-                white_edges[index] = thicker_edge
+        black_edges = [thicker_edge if mark else 0 for mark in mark_edge]
+        white_edges = [0 if mark else thicker_edge for mark in mark_edge]
+
     
         new_tile = cv2.copyMakeBorder(new_tile,   white_edges[0], white_edges[1], white_edges[2], white_edges[3],   cv2.BORDER_CONSTANT, value=(255, 255, 255))
         new_tile = cv2.copyMakeBorder(new_tile,   black_edges[0], black_edges[1], black_edges[2], black_edges[3],   cv2.BORDER_CONSTANT, value=(0, 0, 0))
 
         new_tile = Image.fromarray(new_tile[:, :, [2, 1, 0]])  # Back to RGB mode for Pillow
         
+        # add a black border around invidual numbers
+        new_tile = ImageOps.expand(new_tile, border=border_thick*2, fill='black')
+
+
         new_tile = new_tile.resize((side, side), Image.LANCZOS)
 
         image.paste(new_tile, (col*side, row*side))
