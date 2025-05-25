@@ -344,7 +344,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         # image = ImageOps.expand(image, border=border_thick, fill='white')
         # this is a cool pattern but it looks freaky so i'll remove it.
         if not checked_side:
-            side = image.width
+            side = image.width + 5
             checked_side = True
         picdict.update({key: image})
     
@@ -383,13 +383,17 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
             mark[2] = True
             # left
 
-        white_edges = [thicker_edge if (not m) else 0 for m in mark]
-        black_edges = [thicker_edge if m else 0 for m in mark]
+        for i, m in enumerate(mark):
+            if m:
+                black_edges[i] = thicker_edge
+            else:
+                white_edges[i] = thicker_edge
     
         new_tile = cv2.copyMakeBorder(new_tile,   white_edges[0], white_edges[1], white_edges[2], white_edges[3],   cv2.BORDER_CONSTANT, value=(255, 255, 255))
         new_tile = cv2.copyMakeBorder(new_tile,   black_edges[0], black_edges[1], black_edges[2], black_edges[3],   cv2.BORDER_CONSTANT, value=(0, 0, 0))
 
         new_tile = Image.fromarray(new_tile[:, :, [2, 1, 0]])  # Back to RGB mode for Pillow
+        
         new_tile = new_tile.resize((side, side), Image.LANCZOS)
 
         image.paste(new_tile, (col*side, row*side))
@@ -398,7 +402,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
     del picdict
     gc.collect()
 
-    image = ImageOps.expand(image, border=border_thick*2, fill='black')
+    image = ImageOps.expand(image, border=thicker_edge, fill='black')
     image = image.resize(size, Image.LANCZOS)
     if mostly_black:
         image = ImageOps.invert(image)
