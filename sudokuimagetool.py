@@ -338,8 +338,9 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
     for n in range(0, 10):
         key = f'{n}.png'
         image = Image.open(DIRECTORY+key)
-        image = ImageOps.expand(image, border=border_thick*4, fill='white')
-        # image = ImageOps.expand(image, border=border_thick, fill='black')
+        image = ImageOps.expand(image, border=border_thick*3, fill='white')
+        image = ImageOps.expand(image, border=border_thick, fill='black')
+        image = ImageOps.expand(image, border=border_thick*3, fill='white')
         # sadly this classifies as a bug </3
         # i might return it later to make it look better
         if not checked_side:
@@ -360,17 +361,20 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         
         new_tile = np.asarray(c_tile, dtype=np.uint8)[:, :, [2, 1, 0]]  # BGR mode for CV2
             
+        # the order of the white borders first and then the black ones matters.
+        # the final image will still look like a square, but any corners that should be black, will be black.
+        # otherwiese it'll make the corners white and cause a dotted-line situtation on the grid, which would look odd
         if (col % 3 == 2) and (col != 8) and (row % 3 == 2) and (row != 8):
-            new_tile = cv2.copyMakeBorder(new_tile, 0, border_thick*4, 0, border_thick*4, cv2.BORDER_CONSTANT, value=(0, 0, 0))
             new_tile = cv2.copyMakeBorder(new_tile, border_thick*4, 0, border_thick*4, 0, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+            new_tile = cv2.copyMakeBorder(new_tile, 0, border_thick*4, 0, border_thick*4, cv2.BORDER_CONSTANT, value=(0, 0, 0))
 
         elif (col % 3 == 2) and (col != 8):
-            new_tile = cv2.copyMakeBorder(new_tile, 0, 0, 0, border_thick*4, cv2.BORDER_CONSTANT, value=(0, 0, 0))
             new_tile = cv2.copyMakeBorder(new_tile, border_thick*4, border_thick*4, border_thick*4, 0, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+            new_tile = cv2.copyMakeBorder(new_tile, 0, 0, 0, border_thick*4, cv2.BORDER_CONSTANT, value=(0, 0, 0))
             
         elif (row % 3 == 2) and (row != 8):
-            new_tile = cv2.copyMakeBorder(new_tile, 0, border_thick*4, 0, 0, cv2.BORDER_CONSTANT, value=(0, 0, 0))
             new_tile = cv2.copyMakeBorder(new_tile, border_thick*4, 0, border_thick*4, border_thick*4, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+            new_tile = cv2.copyMakeBorder(new_tile, 0, border_thick*4, 0, 0, cv2.BORDER_CONSTANT, value=(0, 0, 0))
 
         else:
             new_tile = cv2.copyMakeBorder(new_tile, border_thick*4, border_thick*4, border_thick*4, border_thick*4, cv2.BORDER_CONSTANT, value=(255, 255, 255))
