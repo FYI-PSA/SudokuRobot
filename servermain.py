@@ -353,7 +353,7 @@ def main(model, filename, predict_grayscale_func) -> int:  # main thing with all
     print(colored(f"Time to solve: {dt} seconds", "magenta"))
     print(colored(f"The final grid is {'CORRECT' if couldbesolved else 'INCORRECT'}\n\n\n", "green" if couldbesolved else "red"))
     st = time.time()
-    counter: Counter = Counter()
+    counter: SolutionCounter = SolutionCounter()
     count = counter.GetCount(original_grid)
     et = time.time()
     dt = round(et - st, 4)
