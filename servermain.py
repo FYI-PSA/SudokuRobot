@@ -136,6 +136,7 @@ def SolveByCandid(candidbase, gridbase) -> list:  # takes a candidate-containing
                 n_b = breakdowntoset(box)
                 # THIS OPERATION IS NOT GLOBAL
                 # IT APPLIES SEPERATELY TO EACH LOCK
+                #   What did I mean by this when I added it when first writing this?? I genuinly don't know...
                 r_r = ALL - n_r
                 r_c = ALL - n_c
                 r_b = ALL - n_b
@@ -187,21 +188,22 @@ def GuessworkSolve(gridbase, debug=False) -> tuple:
         return (False, grid)
     if debug:
         print(colored("[#] Debug turn:\n", "light_yellow"))
-        # gridprint(candid)
+        gridprint(candid)
         print("")
     for i, row in enumerate(grid):
         for j, item in enumerate(row):
             if item != 0:
                 continue
             candidatestr = candid[i][j]
+            # If a set is of length less than one, then SimpleSolve doesn't assign it a candidate string in the candidates, leaving it as 0.
             if not isinstance(candidatestr, str):
                 if debug:
                     print(colored("[#] *BEEP*! Reached a wrong answer, sorry!", "magenta"))
                 return (False, deepcopy(grid))
             candidates = breakdowntoset(candidatestr)
-            # If a set is of length less than one, the SolveByGrid doesn't assign it a candidate string, but leaves it as 0.
-
+            
             for r_ in candid:  # Prevent the code from going down a spiral when already a grid is definitely unsolvable.
+                # the impossibility check is to check if anyone is candid grid is 0, which means unsolvable.
                 for j_ in r_:
                     if j_ == 0:
                         return (False, deepcopy(grid))
@@ -221,7 +223,63 @@ def GuessworkSolve(gridbase, debug=False) -> tuple:
             if debug:
                 print(colored("[#] Assuming failure.", "magenta"))
             return (False, deepcopy(grid))
-    return (CheckValidGrid(grid), deepcopy(grid))
+    # by this point:
+    # the grid must already be solved, not be wrong, not have any emptiness if it's not returned yet.
+    # so it'll always return True on checkValidgrid because of the first few lines of this function doing that.
+    # return (CheckValidGrid(grid), deepcopy(grid))
+    return (True, deepcopy(grid))
+
+
+class SolutionCounter():
+    def __init__(self, count: int = 0):
+        self.count = 0
+        self.solutions = []
+    def CountSolve(self, gridbase, debug=False) -> tuple:  
+        candid, grid = SimpleSolve(gridbase)
+        if not CheckValidGrid(grid):
+            return (False, grid)
+        for i, row in enumerate(grid):
+            for j, item in enumerate(row):
+                if item != 0:
+                    continue
+                candidatestr = candid[i][j]
+                if not isinstance(candidatestr, str):
+                    return (False, deepcopy(grid))
+                candidates = breakdowntoset(candidatestr)
+                for r_ in candid:
+                    for j_ in r_:
+                        if j_ == 0:
+                            return (False, deepcopy(grid))
+                candidates = list(candidates)
+                candidates.sort()
+                for p in candidates:
+                    testgrid = []
+                    testgrid = deepcopy(grid)
+                    testgrid[i][j] = p
+                    couldbesolved, answer = CountSolve(testgrid, debug=debug)
+                    if couldbesolved and CheckValidGrid(answer):
+                        # return (True, answer)
+                        expanded_answer = []
+                        for row in answer:
+                            expanded_answer.extend(row)
+                        if not (expanded_answer in self.solutions):
+                            self.solutions.append(deepcopy(expanded_answer))
+                            self.count += 1
+                            if self.count >= 100:
+                                raise Exception("Too many solutions! I counted at least 100!")
+                return (False, deepcopy(grid))
+        expanded_answer = []
+        for row in answer:
+            expanded_answer.extend(row)
+        if not (expanded_answer in self.solutions):
+            self.solutions.append(deepcopy(expanded_answer))
+            self.count += 1
+            if self.count >= 100:
+                raise Exception("Too many solutions! I counted at least 100!")
+        return (True, deepcopy(grid))
+    def GetCount(self, gridbase) -> int:
+        self.CountSolve(gridbase, debug=False)
+        return self.count
 
 
 def CheckValidGrid(gridbase) -> bool:  # takes a solved or an unsolved grid and checks each row and column and box only once (9 total tiles) (using some tile coordinates written in the constants) for repeating numbers. returns True if no repeats and False if the grid was solved incorrectly.
@@ -286,26 +344,35 @@ def main(model, filename, predict_grayscale_func) -> int:  # main thing with all
     st = time.time()
     print("\n")
     print(colored("Unsolved Grid:\n", "blue"))
-    # gridprint(GRID)
     gridprint(GRID)
+    original_grid = deepcopy(GRID)
     print("\n")
     couldbesolved, GRID = GuessworkSolve(GRID, debug=False)  # no debug
     et = time.time()
     dt = round(et - st, 4)
     print(colored(f"Time to solve: {dt} seconds", "magenta"))
     print(colored(f"The final grid is {'CORRECT' if couldbesolved else 'INCORRECT'}\n\n\n", "green" if couldbesolved else "red"))
+    st = time.time()
+    counter: Counter = Counter()
+    count = counter.GetCount(original_grid)
+    et = time.time()
+    dt = round(et - st, 4)
+    print(colored(f"Time to check amount of unique solutions: {dt} seconds", "magenta"))
+    print(colored(f"The amount of solutions is {'only one!' if (count == 1) else f'{count}!'}\n\n\n", "blue"))
     if not couldbesolved:
-        print(colored("There's an error in:  1. The image quality - 2. The puzzle configuration - 3. The program", "red"))
-        print(colored("Try sending a clearer picture, more zoomed in and clearer digits, and an obvious square grid with visibly distinct edges in the image.", "red"))
-        print(colored("If you still face this error, check the validty of your puzzles and if it's correct or the image keeps refusing, report the issue to the admin on Telegram [@FYI_PSA](https://t.me/FYI_PSA) or open an issue report on this project's GitHub", "magenta"))
-        print(colored("Project GitHub Page: [github.com/FYI-PSA/ImageSudokuSolver](https://github.com/FYI-PSA/ImageSudokuSolver/)", "magenta"))
+        # expand on this
+        # tell the user better details, as of right now this is WAYYY too broad
+        # print(colored("There's an error in:  1. The image quality - 2. The puzzle configuration - 3. The program", "red"))
+        # print(colored("Try sending a clearer picture, more zoomed in and clearer digits, and an obvious square grid with visibly distinct edges in the image.", "red"))
+        # print(colored("If you still face this error, check the validty of your puzzles and if it's correct or the image keeps refusing, report the issue to the admin on Telegram [@FYI_PSA](https://t.me/FYI_PSA) or open an issue report on this project's GitHub", "magenta"))
+        # print(colored("Project GitHub Page: [github.com/FYI-PSA/ImageSudokuSolver](https://github.com/FYI-PSA/ImageSudokuSolver/)", "magenta"))
         return 1
     print("\n")
     print(colored("Solved Grid:\n", "green"))
-    # gridprint(GRID)
     gridprint(GRID)
     print("\n")
     return 0
+
 
 def servermain(filename, AImodel, predict_grayscale_func):
     print('entering servermain')
