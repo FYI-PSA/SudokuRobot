@@ -175,7 +175,13 @@ def SimpleSolve(gridbase) -> tuple:  # takes a normal unsolved grid, and tries t
     return (candid, grid)
 
 
-def GuessworkSolve(gridbase, debug=False) -> tuple:  # solves the grid by trying the normal solve methods on it, then applying a brute force technique to any unsolved tiles and then trying itself again. takes an unsolved grid as input and returns a boolean for it was solvable and a hopefully solved grid.
+# solves the grid by trying the simple solve methods on it,
+#   "SimpleSolve" method: 
+#     1.single possibility tiles become just that possibility, 
+#     2.if a number can only be in once space of a row/coloumn/box, then that tile becomes the number it can only be there.  
+# then applying a brute force technique to any unsolved tiles and then trying itself again. 
+# takes an unsolved grid as input and returns a boolean for it was solvable alongside a hopefully solved grid.
+def GuessworkSolve(gridbase, debug=False) -> tuple:  
     candid, grid = SimpleSolve(gridbase)
     if not CheckValidGrid(grid):
         return (False, grid)
@@ -193,11 +199,7 @@ def GuessworkSolve(gridbase, debug=False) -> tuple:  # solves the grid by trying
                     print(colored("[#] *BEEP*! Reached a wrong answer, sorry!", "magenta"))
                 return (False, deepcopy(grid))
             candidates = breakdowntoset(candidatestr)
-
-            # if len(candidates) == 0:  # I'm pretty sure this is impossible because if a set is of length less than one, the SolveByGrid doesn't assign it a candidate string, but leaves it as 0.
-            #     if debug:  # But I'm still keeping this code in case I accidentally change something about that.
-            #         print(colored("[#] *BEEP*! Reached a wrong answer, sorry!", "magenta"))  # This is definitely a sign of bad coding (lol): uncertainty of input type.
-            #     return (False, deepcopy(grid))
+            # If a set is of length less than one, the SolveByGrid doesn't assign it a candidate string, but leaves it as 0.
 
             for r_ in candid:  # Prevent the code from going down a spiral when already a grid is definitely unsolvable.
                 for j_ in r_:
