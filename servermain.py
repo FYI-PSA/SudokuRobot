@@ -256,7 +256,7 @@ class SolutionCounter():
                     testgrid = []
                     testgrid = deepcopy(grid)
                     testgrid[i][j] = p
-                    couldbesolved, answer = CountSolve(testgrid, debug=debug)
+                    couldbesolved, answer = self.CountSolve(testgrid, debug=debug)
                     if couldbesolved and CheckValidGrid(answer):
                         # return (True, answer)
                         expanded_answer = []
