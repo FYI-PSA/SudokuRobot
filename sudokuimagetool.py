@@ -332,18 +332,17 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
     picdict = {}
     DIRECTORY = 'numbers/'
     side = 0
-    border_thick = 11
-    thicker_edge = border_thick * 2
+    border_thick = 10
+    thicker_edge = border_thick * 3
 
     checked_side = False
     for n in range(0, 10):
         key = f'{n}.png'
         image = Image.open(DIRECTORY+key)
-        image = ImageOps.expand(image, border=border_thick*3, fill='white')
-        image = ImageOps.expand(image, border=border_thick, fill='black')
-        image = ImageOps.expand(image, border=border_thick, fill='white')
-        # sadly this classifies as a bug </3
-        # i might return it later to make it look better
+        image = ImageOps.expand(image, border=border_thick*5, fill='white')
+        # image = ImageOps.expand(image, border=border_thick, fill='black')
+        # image = ImageOps.expand(image, border=border_thick, fill='white')
+        # this is a cool pattern but it looks freaky so i'll remove it.
         if not checked_side:
             side = image.width
             checked_side = True
@@ -367,40 +366,38 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         # the order of the white borders first and then the black ones matters.
         # the final image will still look like a square, but any corners that should be black, will be black.
         # otherwiese it'll make the corners white and cause a dotted-line situtation on the grid, which would look odd
-        if (col % 3 == 2) and (col != 8) and (row % 3 == 2) and (row != 8):
-            new_tile = cv2.copyMakeBorder(new_tile, thicker_edge, 0, thicker_edge, 0, cv2.BORDER_CONSTANT, value=(255, 255, 255))
-            new_tile = cv2.copyMakeBorder(new_tile, 0, thicker_edge, 0, thicker_edge, cv2.BORDER_CONSTANT, value=(0, 0, 0))
-
-        if (col % 3 == 0) and (col != 0) and (row % 3 == 0) and (row != 0):
-            new_tile = cv2.copyMakeBorder(new_tile, 0, thicker_edge, 0, thicker_edge, cv2.BORDER_CONSTANT, value=(255, 255, 255))
-            new_tile = cv2.copyMakeBorder(new_tile, thicker_edge, 0, thicker_edge, 0, cv2.BORDER_CONSTANT, value=(0, 0, 0))
-
-        elif (col % 3 == 2) and (col != 8):
-            new_tile = cv2.copyMakeBorder(new_tile, thicker_edge, thicker_edge, thicker_edge, 0, cv2.BORDER_CONSTANT, value=(255, 255, 255))
-            new_tile = cv2.copyMakeBorder(new_tile, 0, 0, 0, thicker_edge, cv2.BORDER_CONSTANT, value=(0, 0, 0))
-
+        mark = [False, False, False, False]
+        if (col % 3 == 2) and (col != 8):
+            mark[1] = True
+            # bottom
+        
         elif (col % 3 == 0) and (col != 0):
-            new_tile = cv2.copyMakeBorder(new_tile, thicker_edge, thicker_edge, thicker_edge, 0, cv2.BORDER_CONSTANT, value=(255, 255, 255))
-            new_tile = cv2.copyMakeBorder(new_tile, 0, 0, 0, thicker_edge, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+            mark[0] = True
+            # top
 
-        elif (row % 3 == 2) and (row != 8):
-            new_tile = cv2.copyMakeBorder(new_tile, thicker_edge, 0, thicker_edge, thicker_edge, cv2.BORDER_CONSTANT, value=(255, 255, 255))
-            new_tile = cv2.copyMakeBorder(new_tile, 0, thicker_edge, 0, 0, cv2.BORDER_CONSTANT, value=(0, 0, 0))
-
+        if (row % 3 == 2) and (row != 8):
+            mark[3] = True
+            # right
+        
         elif (row % 3 == 0) and (row != 0):
-            new_tile = cv2.copyMakeBorder(new_tile, thicker_edge, 0, thicker_edge, thicker_edge, cv2.BORDER_CONSTANT, value=(255, 255, 255))
-            new_tile = cv2.copyMakeBorder(new_tile, 0, thicker_edge, 0, 0, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+            mark[2] = True
+            # left
 
-        else:
-            new_tile = cv2.copyMakeBorder(new_tile, thicker_edge, thicker_edge, thicker_edge, thicker_edge, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+        white_edges = [thicker_edge if (not m) else 0 for m in mark]
+        black_edges = [thicker_edge if m else 0 for m in mark]
+    
+        new_tile = cv2.copyMakeBorder(new_tile,   white_edges[0], white_edges[1], white_edges[2], white_edges[3],   cv2.BORDER_CONSTANT, value=(255, 255, 255))
+        new_tile = cv2.copyMakeBorder(new_tile,   black_edges[0], black_edges[1], black_edges[2], black_edges[3],   cv2.BORDER_CONSTANT, value=(0, 0, 0))
 
         new_tile = Image.fromarray(new_tile[:, :, [2, 1, 0]])  # Back to RGB mode for Pillow
         new_tile = new_tile.resize((side, side), Image.LANCZOS)
 
         image.paste(new_tile, (col*side, row*side))
         del new_tile
-     
+    
+    del picdict
     gc.collect()
+
     image = ImageOps.expand(image, border=border_thick*2, fill='black')
     image = image.resize(size, Image.LANCZOS)
     if mostly_black:
