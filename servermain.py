@@ -269,6 +269,7 @@ class SolutionCounter():
                                 raise Exception("Too many solutions! I counted at least 100!")
                 return (False, deepcopy(grid))
         expanded_answer = []
+        answer = deepcopy(grid)
         for row in answer:
             expanded_answer.extend(row)
         if not (expanded_answer in self.solutions):
@@ -276,7 +277,7 @@ class SolutionCounter():
             self.count += 1
             if self.count >= 100:
                 raise Exception("Too many solutions! I counted at least 100!")
-        return (True, deepcopy(grid))
+        return (True, answer)
     def GetCount(self, gridbase) -> int:
         self.CountSolve(gridbase, debug=False)
         return self.count
