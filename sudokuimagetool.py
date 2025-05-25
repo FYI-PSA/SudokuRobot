@@ -339,7 +339,9 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         key = f'{n}.png'
         image = Image.open(DIRECTORY+key)
         image = ImageOps.expand(image, border=border_thick*4, fill='white')
-        image = ImageOps.expand(image, border=border_thick, fill='black')
+        # image = ImageOps.expand(image, border=border_thick, fill='black')
+        # sadly this classifies as a bug </3
+        # i might return it later to make it look better
         if not checked_side:
             side = image.width
             checked_side = True
