@@ -383,6 +383,8 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
             mark[2] = True
             # left
 
+        black_edges = [0]*4
+        white_edges = [0]*4
         for i, m in enumerate(mark):
             if m:
                 black_edges[i] = thicker_edge
