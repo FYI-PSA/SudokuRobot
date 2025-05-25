@@ -332,19 +332,19 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
     picdict = {}
     DIRECTORY = 'numbers/'
     side = 0
-    border_thick = 10
-    thicker_edge = border_thick * 3
+    border_thick = 9
+    thicker_edge = border_thick * 2
 
     checked_side = False
     for n in range(0, 10):
         key = f'{n}.png'
         image = Image.open(DIRECTORY+key)
-        image = ImageOps.expand(image, border=border_thick*5, fill='white')
+        image = ImageOps.expand(image, border=border_thick*4, fill='white')
         # image = ImageOps.expand(image, border=border_thick, fill='black')
         # image = ImageOps.expand(image, border=border_thick, fill='white')
         # this is a cool pattern but it looks freaky so i'll remove it.
         if not checked_side:
-            side = image.width + 20
+            side = image.width + 25
             checked_side = True
         picdict.update({key: image})
     
@@ -393,7 +393,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         new_tile = Image.fromarray(new_tile[:, :, [2, 1, 0]])  # Back to RGB mode for Pillow
         
         # add a black border around invidual numbers
-        new_tile = ImageOps.expand(new_tile, border=border_thick*2, fill='black')
+        new_tile = ImageOps.expand(new_tile, border=border_thick, fill='black')
 
 
         new_tile = new_tile.resize((side, side), Image.LANCZOS)
