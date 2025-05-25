@@ -359,6 +359,9 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         col = i % 9
         c_tile = picdict[f'{n}.png']
         
+        # what the hell is wrong?
+        print(row, col)
+
         new_tile = np.asarray(c_tile, dtype=np.uint8)[:, :, [2, 1, 0]]  # BGR mode for CV2
         
         # cv2.copyMakeBorder order: top bottom left right
@@ -366,30 +369,30 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         # the order of the white borders first and then the black ones matters.
         # the final image will still look like a square, but any corners that should be black, will be black.
         # otherwiese it'll make the corners white and cause a dotted-line situtation on the grid, which would look odd
-        mark = [False, False, False, False]
+        mark_edge = [False, False, False, False]
         if (col % 3 == 2) and (col != 8):
-            mark[1] = True
-            # bottom
-        
-        elif (col % 3 == 0) and (col != 0):
-            mark[0] = True
-            # top
-
-        if (row % 3 == 2) and (row != 8):
-            mark[3] = True
+            mark_edge[3] = True
             # right
         
-        elif (row % 3 == 0) and (row != 0):
-            mark[2] = True
+        elif (col % 3 == 0) and (col != 0):
+            mark_edge[2] = True
             # left
+
+        if (row % 3 == 2) and (row != 8):
+            mark_edge[1] = True
+            # bottom
+        
+        elif (row % 3 == 0) and (row != 0):
+            mark_edge[0] = True
+            # top
 
         black_edges = [0]*4
         white_edges = [0]*4
-        for i, m in enumerate(mark):
-            if m:
-                black_edges[i] = thicker_edge
+        for index, mark in enumerate(mark_edge):
+            if mark:
+                black_edges[index] = thicker_edge
             else:
-                white_edges[i] = thicker_edge
+                white_edges[index] = thicker_edge
     
         new_tile = cv2.copyMakeBorder(new_tile,   white_edges[0], white_edges[1], white_edges[2], white_edges[3],   cv2.BORDER_CONSTANT, value=(255, 255, 255))
         new_tile = cv2.copyMakeBorder(new_tile,   black_edges[0], black_edges[1], black_edges[2], black_edges[3],   cv2.BORDER_CONSTANT, value=(0, 0, 0))
@@ -399,7 +402,12 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         new_tile = new_tile.resize((side, side), Image.LANCZOS)
 
         image.paste(new_tile, (col*side, row*side))
+
         del new_tile
+        del mark_edge
+        del black_edges
+        del white_edges
+
     
     del picdict
     gc.collect()
