@@ -332,8 +332,8 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
     picdict = {}
     DIRECTORY = 'numbers/'
     side = 0
-    border_thick = 9
-    thicker_edge = border_thick * 2
+    border_thick = 7
+    thicker_edge = round(border_thick * 1.8)
 
     checked_side = False
     for n in range(0, 10):
