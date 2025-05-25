@@ -357,28 +357,28 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         c_tile = picdict[f'{n}.png']
         
         new_tile = np.asarray(c_tile, dtype=np.uint8)[:, :, [2, 1, 0]]  # BGR mode for CV2
-        
-	if (col % 3 == 2) and (col != 8) and (row % 3 == 2) and (row != 8):
+            
+        if (col % 3 == 2) and (col != 8) and (row % 3 == 2) and (row != 8):
             new_tile = cv2.copyMakeBorder(new_tile, 0, border_thick*4, 0, border_thick*4, cv2.BORDER_CONSTANT, value=(0, 0, 0))
-	    new_tile = cv2.copyMakeBorder(new_tile, border_thick*4, 0, border_thick*4, 0, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+            new_tile = cv2.copyMakeBorder(new_tile, border_thick*4, 0, border_thick*4, 0, cv2.BORDER_CONSTANT, value=(255, 255, 255))
 
         elif (col % 3 == 2) and (col != 8):
             new_tile = cv2.copyMakeBorder(new_tile, 0, 0, 0, border_thick*4, cv2.BORDER_CONSTANT, value=(0, 0, 0))
-	    new_tile = cv2.copyMakeBorder(new_tile, border_thick*4, border_thick*4, border_thick*4, 0, cv2.BORDER_CONSTANT, value=(255, 255, 255))
-        
+            new_tile = cv2.copyMakeBorder(new_tile, border_thick*4, border_thick*4, border_thick*4, 0, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+            
         elif (row % 3 == 2) and (row != 8):
             new_tile = cv2.copyMakeBorder(new_tile, 0, border_thick*4, 0, 0, cv2.BORDER_CONSTANT, value=(0, 0, 0))
-	    new_tile = cv2.copyMakeBorder(new_tile, border_thick*4, 0, border_thick*4, border_thick*4, cv2.BORDER_CONSTANT, value=(255, 255, 255))
-        
-	else:
-	    new_tile = cv2.copyMakeBorder(new_tile, border_thick*4, border_thick*4, border_thick*4, border_thick*4, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+            new_tile = cv2.copyMakeBorder(new_tile, border_thick*4, 0, border_thick*4, border_thick*4, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+
+        else:
+            new_tile = cv2.copyMakeBorder(new_tile, border_thick*4, border_thick*4, border_thick*4, border_thick*4, cv2.BORDER_CONSTANT, value=(255, 255, 255))
 
         new_tile = Image.fromarray(new_tile[:, :, [2, 1, 0]])  # Back to RGB mode for Pillow
         new_tile = new_tile.resize((side, side), Image.LANCZOS)
 
         image.paste(new_tile, (col*side, row*side))
         del new_tile
-        
+     
     gc.collect()
     image = ImageOps.expand(image, border=border_thick*2, fill='black')
     image = image.resize(size, Image.LANCZOS)
