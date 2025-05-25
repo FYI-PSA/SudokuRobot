@@ -332,13 +332,13 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
     picdict = {}
     DIRECTORY = 'numbers/'
     side = 0
-    border_thick = 13
+    border_thick = 12
 
     checked_side = False
     for n in range(0, 10):
         key = f'{n}.png'
         image = Image.open(DIRECTORY+key)
-        image = ImageOps.expand(image, border=border_thick*3, fill='white')
+        image = ImageOps.expand(image, border=border_thick*4, fill='white')
         image = ImageOps.expand(image, border=border_thick, fill='black')
         if not checked_side:
             side = image.width
@@ -360,16 +360,19 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         
 	if (col % 3 == 2) and (col != 8) and (row % 3 == 2) and (row != 8):
             new_tile = cv2.copyMakeBorder(new_tile, 0, border_thick*4, 0, border_thick*4, cv2.BORDER_CONSTANT, value=(0, 0, 0))
-	    new_tile = cv2.copyMakeBorder(new_tile, border_tick*4, 0, border_thick*4, 0, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+	    new_tile = cv2.copyMakeBorder(new_tile, border_thick*4, 0, border_thick*4, 0, cv2.BORDER_CONSTANT, value=(255, 255, 255))
 
         elif (col % 3 == 2) and (col != 8):
             new_tile = cv2.copyMakeBorder(new_tile, 0, 0, 0, border_thick*4, cv2.BORDER_CONSTANT, value=(0, 0, 0))
-	    new_tile = cv2.copyMakeBorder(new_tile, border_tick*4, border_thick*4, border_thick*4, 0, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+	    new_tile = cv2.copyMakeBorder(new_tile, border_thick*4, border_thick*4, border_thick*4, 0, cv2.BORDER_CONSTANT, value=(255, 255, 255))
         
         elif (row % 3 == 2) and (row != 8):
             new_tile = cv2.copyMakeBorder(new_tile, 0, border_thick*4, 0, 0, cv2.BORDER_CONSTANT, value=(0, 0, 0))
-	    new_tile = cv2.copyMakeBorder(new_tile, border_tick*4, 0, border_thick*4, border_thick*4, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+	    new_tile = cv2.copyMakeBorder(new_tile, border_thick*4, 0, border_thick*4, border_thick*4, cv2.BORDER_CONSTANT, value=(255, 255, 255))
         
+	else:
+	    new_tile = cv2.copyMakeBorder(new_tile, border_tick*4, border_tick*4, border_thick*4, border_thick*4, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+
         new_tile = Image.fromarray(new_tile[:, :, [2, 1, 0]])  # Back to RGB mode for Pillow
         new_tile = new_tile.resize((side, side), Image.LANCZOS)
 
@@ -382,7 +385,6 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
     if mostly_black:
         image = ImageOps.invert(image)
     return image
-
 
 
 def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list) -> Tuple[Tuple[int, int, int, int], Image.Image, Image.Image, bool]: 
