@@ -252,9 +252,9 @@ class Solver():
         if self.SOLUTIONS != []:
             return (True, self.SOLUTIONS[0])
         # else:
-        print(' im so sad, there aint a solution! \n\n\n\n\n  I SAID IM SADDDDDDD!!!')
+        print(' im so sad, there aint a solution! \n\n\n\n\n  I SAID IM SADDDDDDD!!! ')
         status, result = self.OLD_GuessworkSolve(self.first_grid)
-        print(status, result)
+        print(f'{status}, {result}')  # Can't forget that print is logging.info and that only takes 1 argument 
         return (status, result)
 
     def count_solve(self, inputgrid) -> tuple:
