@@ -244,13 +244,16 @@ class Solver():
         # return (check_valid_grid(grid), deepcopy(grid))
         return (True, deepcopy(grid))
 
+    def back_to_grid(self, gridlist) -> list:
+        return [gridlist[i:i+9] for i in range(0, 81, 9)]
+
     def guesswork_solve(self) -> tuple:
         if self.SOLUTIONS != []:
-            return (True, self.SOLUTIONS[0])
+            return (True, self.back_to_grid(self.SOLUTIONS[0]))
         # else:
         self.count_solve(self.grid)
         if self.SOLUTIONS != []:
-            return (True, self.SOLUTIONS[0])
+            return (True, self.back_to_grid(self.SOLUTIONS[0]))
         # else:
         print(' im so sad, there aint a solution! \n\n\n\n\n  I SAID IM SADDDDDDD!!! ')
         status, result = self.OLD_GuessworkSolve(self.first_grid)
