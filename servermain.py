@@ -6,7 +6,7 @@ from collections import Counter
 import sudokuimagetool
 
 import gc
-
+import ast
 
 import logging
 print = logging.info
@@ -293,7 +293,7 @@ class Solver():
                             self.SOLUTIONS.append(deepcopy(expanded_answer))
                             self.COUNT += 1
                             if self.COUNT > 100:
-                                raise TooManySolutionsException("Too many solutions! I counted at least 100!")
+                                raise TooManySolutionsException(self.back_to_grid(self.SOLUTIONS[0]))
                 return (False, deepcopy(grid))
         expanded_answer = []
         answer = deepcopy(grid)
@@ -304,7 +304,7 @@ class Solver():
             self.SOLUTIONS.append(deepcopy(expanded_answer))
             self.COUNT += 1
             if self.COUNT > 100:
-                raise TooManySolutionsException("Too many solutions! I counted at least 100!")
+                raise TooManySolutionsException(self.back_to_grid(self.SOLUTIONS[0]))
         return (True, answer)
 
     def get_count(self) -> int:
@@ -424,8 +424,9 @@ def servermain(filename, ai_model, predict_grayscale_func):
 
     except TooManySolutionsException as err_message:
         print("got too many solutions")
-        returnedgrid = deepcopy(EMPTYGRID)
-        error_message = str(err_message)
+        count_of_solutions = 101
+        returnedgrid = ast.literal_eval(err_message)
+        error_message = "This puzzle has at least 100 solutions!"
         error_name = "Too many solutions"
         error_line = sys.exc_info()[-1].tb_lineno
 
@@ -452,7 +453,7 @@ def servermain(filename, ai_model, predict_grayscale_func):
             )
         return (False, gridname, solvedname, returnedgrid, str(err_message_html), 'CouldNotBeSolved', 309)
 
-    elif count_of_solutions > 1:
+    elif count_of_solutions > 1 and count_of_solutions < 100:
         print("got a bunch of results but less than a hundred")
         error_message = "The puzzle didn't have a unique solutions"
         error_name = "Solutions not unique"
