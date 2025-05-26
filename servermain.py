@@ -130,7 +130,7 @@ class Solver():
         return (candid, grid)
 
 
-    def SolveByCandid(inputcandids, inputgrid) -> list:  # takes a candidate-containing grid and the normal grid and tries to solve based on being the only candidate for a number in a set. returns a kinda-solved normal grid
+    def SolveByCandid(self, inputcandids, inputgrid) -> list:  # takes a candidate-containing grid and the normal grid and tries to solve based on being the only candidate for a number in a set. returns a kinda-solved normal grid
         candid = deepcopy(inputcandids)
         grid = deepcopy(inputgrid)
         for i, row in enumerate(candid):
@@ -165,7 +165,7 @@ class Solver():
         return grid
 
 
-    def SimpleSolve(inputgrid) -> tuple:  # takes a normal unsolved grid, and tries to solve it using the two functions above. returns a potentially condidate-containing grid and a potentially solved grid.
+    def SimpleSolve(self, inputgrid) -> tuple:  # takes a normal unsolved grid, and tries to solve it using the two functions above. returns a potentially condidate-containing grid and a potentially solved grid.
         grid = deepcopy(inputgrid)
         candid = deepcopy(grid)
         copygrid = deepcopy(EMPTYGRID)
