@@ -425,7 +425,7 @@ def servermain(filename, ai_model, predict_grayscale_func):
     except TooManySolutionsException as err_message:
         print("got too many solutions")
         count_of_solutions = 101
-        returnedgrid = ast.literal_eval(err_message)
+        returnedgrid = ast.literal_eval(str(err_message))
         error_message = "This puzzle has at least 100 solutions!"
         error_name = "Too many solutions"
         error_line = sys.exc_info()[-1].tb_lineno
