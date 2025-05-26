@@ -319,11 +319,11 @@ class Solver():
             row = inputgrid[i]
             item = row[j]
             row_neigh = [n for n in deepcopy(row) if n != 0]
-            col_neigh = [_r[j] for _r in grid if _r[j] != 0]
+            col_neigh = [_r[j] for _r in inputgrid if _r[j] != 0]
             box_i = i // 3
             box_j = j // 3
             box_neigh = []
-            for i_, row_ in enumerate(grid[box_i*3:(box_i+1)*3]):
+            for i_, row_ in enumerate(inputgrid[box_i*3:(box_i+1)*3]):
                 for j_, item_ in enumerate(row_[box_j*3:(box_j+1)*3]):
                     if item_ == 0:
                         continue
