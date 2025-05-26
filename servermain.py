@@ -261,7 +261,7 @@ class Solver():
 
 
     def CountSolve(self, inputgrid) -> tuple:  
-        candid, grid = SimpleSolve(inputgrid)
+        candid, grid = self.SimpleSolve(inputgrid)
         if not self.CheckValidGrid(grid):
             return (False, grid)
         for i, row in enumerate(grid):
