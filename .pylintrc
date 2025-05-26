@@ -1,5 +1,5 @@
-# extension-pkg-whitelist=cv2, numpy
 extension-pkg-allow-list=cv2, numpy
+extension-pkg-whitelist=cv2, numpy
 [FORMAT]
 max-line-length=500
 [MESSAGES CONROL]

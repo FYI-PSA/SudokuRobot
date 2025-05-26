@@ -94,10 +94,12 @@ class Solver():
         # Definitely mathematically reduntant and can be reduced.
         # I don't want to do that though, too lazy. Deal with it, it's not slow enough to care about.
         self.GRID = deepcopy(EMPTYGRID)  # pylint: disable=C0103
-        self.SOLUTIONS = []  # pylint: disable=C0103
+        # self.SOLUTIONS = []  # pylint: disable=C0103
+        self.SOLUTIONS = set()  # pylint: disable=C0103
         self.COUNT = 0  # pylint: disable=C0103
         self.grid = grid
         self.first_grid = deepcopy(grid)
+        self.first_solution = deepcopy(grid)
 
     def solve_by_grid(self, inputgrid) -> tuple:
         # takes a base grid and tries to solve for lonely items. returns a candidate-filled kinda-solved grid and the normal kinda-solved grid
@@ -248,16 +250,18 @@ class Solver():
         return [gridlist[i:i+9] for i in range(0, 81, 9)]
 
     def guesswork_solve(self) -> tuple:
-        if self.SOLUTIONS != []:
+        # if self.SOLUTIONS != []:
+        if len(self.SOLUTIONS) != 0:
             return (True, self.back_to_grid(self.SOLUTIONS[0]))
         # else:
         self.count_solve(self.grid)
-        if self.SOLUTIONS != []:
+        # if self.SOLUTIONS != []:
+        if len(self.SOLUTIONS) != 0:
             return (True, self.back_to_grid(self.SOLUTIONS[0]))
         # else:
         print(' im so sad, there aint a solution! \n\n\n\n\n  I SAID IM SADDDDDDD!!! ')
         status, result = self.OLD_GuessworkSolve(self.first_grid)
-        print(f'{status}, {result}')  # Can't forget that print is logging.info and that only takes 1 argument 
+        print(f'{status}, {result}')  # Can't forget that print is logging.info and that only takes 1 argument
         return (status, result)
 
     def count_solve(self, inputgrid) -> tuple:
@@ -289,8 +293,10 @@ class Solver():
                         for row in answer:
                             expanded_answer.extend(row)
                         # if not (expanded_answer in self.SOLUTIONS):
-                        if expanded_answer not in self.SOLUTIONS:
-                            self.SOLUTIONS.append(deepcopy(expanded_answer))
+                        # if expanded_answer not in self.SOLUTIONS:
+                        if tuple(expanded_answer) not in self.SOLUTIONS:
+                            # self.SOLUTIONS.append(deepcopy(expanded_answer))
+                            self.SOLUTIONS.add(tuple(deepcopy(expanded_answer)))
                             self.COUNT += 1
                             if self.COUNT > 100:
                                 raise TooManySolutionsException(self.back_to_grid(self.SOLUTIONS[0]))
@@ -300,8 +306,10 @@ class Solver():
         for row in answer:
             expanded_answer.extend(row)
         # if not (expanded_answer in self.SOLUTIONS):
-        if expanded_answer not in self.SOLUTIONS:
-            self.SOLUTIONS.append(deepcopy(expanded_answer))
+        # if expanded_answer not in self.SOLUTIONS:
+        if tuple(expanded_answer) not in self.SOLUTIONS:
+            # self.SOLUTIONS.append(deepcopy(expanded_answer))
+            self.SOLUTIONS.add(tuple(deepcopy(expanded_answer)))
             self.COUNT += 1
             if self.COUNT > 100:
                 raise TooManySolutionsException(self.back_to_grid(self.SOLUTIONS[0]))
@@ -313,6 +321,13 @@ class Solver():
         # else:
         self.count_solve(self.grid)
         return self.COUNT
+
+    def get_first_solution(self) -> int:
+        if self.COUNT == 1:
+            return self.back_to_grid(list(next(iter(self.SOLUTIONS))))
+        if self.COUNT != 1:
+            self.first_solution = self.OLD_GuessworkSolve(self.first_grid)[1]
+            return self.first_solution
 
     def check_valid_grid(self, inputgrid) -> bool:
         # takes a solved or an unsolved grid and checks each row and column and box only once (9 total tiles) (using some tile coordinates written in the constants) for repeating numbers. returns True if no repeats and False if the grid was solved incorrectly.
@@ -383,6 +398,7 @@ def main(model, filename, predict_grayscale_func) -> tuple:
     solution = Solver(deepcopy(maingrid))
     couldbesolved, maingrid = solution.guesswork_solve()
     solutions = solution.get_count()
+    maingrid = solution.get_first_solution()
 
     et = time.time()
     dt = round(et - st, 4)
