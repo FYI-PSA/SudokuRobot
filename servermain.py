@@ -430,6 +430,9 @@ def servermain(filename, AImodel, predict_grayscale_func):
 
     except Exception as err_message:
         print("got an error")
+        print(err_message)
+        print(sys.exc_info()[-1].tb_lineno)
+        exit(1)
         return (False, gridname, solvedname, deepcopy(EMPTYGRID), str(err_message), type(err_message).__name__, sys.exc_info()[-1].tb_lineno)
     
     if res == -1:
