@@ -252,12 +252,12 @@ class Solver():
     def guesswork_solve(self) -> tuple:
         # if self.SOLUTIONS != []:
         if len(self.SOLUTIONS) != 0:
-            return (True, self.back_to_grid(self.SOLUTIONS[0]))
+            return (True, self.get_first_solution())
         # else:
         self.count_solve(self.grid)
         # if self.SOLUTIONS != []:
         if len(self.SOLUTIONS) != 0:
-            return (True, self.back_to_grid(self.SOLUTIONS[0]))
+            return (True, self.get_first_solution())
         # else:
         print(' im so sad, there aint a solution! \n\n\n\n\n  I SAID IM SADDDDDDD!!! ')
         status, result = self.OLD_GuessworkSolve(self.first_grid)
