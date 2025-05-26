@@ -9,17 +9,19 @@ logging.basicConfig(
 print = logging.info
 
 
-import os, sys, subprocess
+import os
+import sys
+import subprocess
 import psutil
 
 
 print("NUCLEAR MODE. WILL KILL ANY OTHER RUNNING PYTHON INSTANCE.")
 me = os.getpid()
 if os.name == 'nt':
-    procname = 'python.exe'
+    PYTHON_NAME = 'python.exe'
 else:
-    procname = 'python'
-pythons = [p for p in psutil.process_iter() if p.name() == procname]
+    PYTHON_NAME = 'python'
+pythons = [p for p in psutil.process_iter() if p.name() == PYTHON_NAME]
 # print(pythons)
 # print(me)
 # print("^ yup")
@@ -52,7 +54,7 @@ def exit_handler():
     if FILE in os.listdir(LOCK):
         os.remove(KEY)
     else:
-        print(f"no lock while quitting.")
+        print("no lock while quitting.")
     print('Program shut down.')
 
 
@@ -68,33 +70,35 @@ import threading
 import time
 import asyncio
 from http import HTTPStatus
-from telegram import Update, InputFile, InputMediaPhoto
+from telegram import InputMediaPhoto
 from telegram.error import Conflict
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 import gc
 
 
 def bind_port():
-    HOST = '0.0.0.0'
+    host = '0.0.0.0'
     port_ = os.getenv('PORT')
     if port_ is None:
-        PORT = "8080"
+        port = "8080"
     else:
-        PORT = port_
+        port = port_
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    print(f'Binding the socket to port {PORT} and to {HOST}.')
-    sock.bind((HOST, int(PORT)))
+    print(f'Binding the socket to port {port} and to {host}.')
+    sock.bind((host, int(port)))
     return sock
 
 
 global stop_listening
-stop_listening = False
+stop_listening = False  # pylint: disable=C0103
 
 
 def sock_listener(sock):
     global stop_listening
     print('Listener on the socket is starting now.')
-    while (not sock._closed) and (not stop_listening):
+    # while (not sock._closed) and (not stop_listening):
+    # apparently ._closed is private so it most likely won't work how I expect it to.
+    while not stop_listening:
         sock.listen(10)
         connection, address = sock.accept()
         with connection:
@@ -103,7 +107,7 @@ def sock_listener(sock):
             http_ver = 'HTTP/1.1'
             status = 'OK'  # https://docs.python.org/3/library/http.html#http-status-codes
             status_http = getattr(HTTPStatus, status, 'OK')  # third one is the default if the 'status' is wrong.
-            status_value = f'{status_http.value} {status_http.phrase}'
+            status_value = f'{status_http.value} {status_http.phrase}'  # type: ignore
             content_type = 'text/html'
             data = 'If you can read this, the bot is online! You can close this.'
             body = f'<HTML><body> <h1>{data}</h1> </body></HTML>'
@@ -120,12 +124,12 @@ async def start(update, context):
     print(f"User info:\n{user_profile}")
 
 
-async def notifystart(app, adminid):
-    await app.bot.send_message(chat_id=adminid, text="The bot has started!")
+async def notifystart(app, admin_id):
+    await app.bot.send_message(chat_id=admin_id, text="The bot has started!")
 
 
 async def help(update, context):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"If the bot stops working, you should quickly visit\nhttps://sudokurobot.onrender.com/\nThen wait for around 1 minute and the bot will be working. (The page will reload when the bot stats working)")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="If the bot stops working, you should quickly visit\nhttps://sudokurobot.onrender.com/\nThen wait for around 1 minute and the bot will be working. (The page will reload when the bot stats working)")
     await context.bot.send_message(chat_id=update.effective_chat.id, text="Send me a screenshot or any other image of a Sudoku puzzle!")
     user = update.message.from_user
     user_profile = f'Name: {user.first_name} - {user.last_name}   |   Username: {user.username}   |   Id: {user.id}'
@@ -134,7 +138,8 @@ async def help(update, context):
 
 print('importing the heart of the project, including tensorflow...')
 import servermain
-from tilereader import grayscale_numpy_tiles_list_to_predicted_integer_list as predict_grayscale_func, load_model as load_model
+from tilereader import grayscale_numpy_tiles_list_to_predicted_integer_list as predict_grayscale_func
+from tilereader import load_model
 AImodel = load_model()
 print('ai model loaded.')
 
@@ -143,22 +148,16 @@ def get_or_create_eventloop():
     try:
         print("Creating new event loop...")
         return asyncio.get_event_loop()
-    except Exception as e:
-        print("Caught one: {e}")
-        if "no current event loop" in str(e):
-            print("Setting existing event loop...")
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            return asyncio.get_event_loop()
-        else:
-            print("Error in setting the event loop to a previously existing one?")
-            print(f"{e}")
-            raise e
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        print("Set existing event loop")
+        return asyncio.get_event_loop()
 
 
-async def echo(update, context):
+async def respond_messages(update, context):
     message = update.message.text
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Use /help to learn about what to do if facing an issue.\nUse /start to learn how to use the bot.")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="Use /help to learn about what to do if facing an issue.\nUse /start to learn how to use the bot.")
     # response = requests.get('https://sudokucodehost-tgbot.onrender.com/')
     # print(f"Site response: {response}")
     print(f"User: {update.message.from_user.username} | Message: {message}")
@@ -167,7 +166,7 @@ async def echo(update, context):
 async def process_image(update, context):
     await context.bot.send_message(chat_id=update.effective_chat.id, text="Solving...\nPlease wait, this may take up to a minute depending on the load on the server...", reply_to_message_id=update.message.message_id)
     print("Brb...")
-    
+
     img_file_name = await save_attachment_to_file(update, context)
     time.sleep(1)
     img_file_name = str(img_file_name)
@@ -188,29 +187,35 @@ async def process_image(update, context):
 
     print("Woohoo! The heart beat and did its thing!")
     toomanysolutions_flag = False
-    notuniquesolutions_flag = False
+    no_unique_solutions_flag = False
     if success and (possible_err_name is None):
         # await context.bot.send_message(chat_id=update.effective_chat.id, text="Excellent", reply_to_message_id=update.message.message_id)
         pass
     elif success and (possible_err_name == 'Too many solutions'):
-        response: str = ('Your puzzle had more than 100 possible solutions!\n'
+        response: str = (
+            'Your puzzle had more than 100 possible solutions!\n'
             'If your grid was not empty or you think the number of solutions is less than a hundred,\n'
-            'please message the admin @FYI_PSA about this.')
+            'please message the admin @FYI_PSA about this.'
+            )
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, reply_to_message_id=update.message.message_id)
         # no return, do the rest of the code too.
         toomanysolutions_flag = True
-        notuniquesolutions_flag = True
+        no_unique_solutions_flag = True
     elif success and (possible_err_name == 'Solutions not unique'):
-        response: str = ("Your didn't have a unique solution.\n"
-            'If you think the puzzle only has one unique solution,\n'
-            'please message the admin @FYI_PSA about this.')
+        response: str = (
+            "Your didn't have a unique solution.\n"
+            "If you think the puzzle only has one unique solution,\n"
+            "please message the admin @FYI_PSA about this."
+            )
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, reply_to_message_id=update.message.message_id)
         # no return, do the rest of the code too.
-        notuniquesolutions_flag = True
-    elif success and (not (possible_err_name is None)):
-        response: str = ('Solving the grid was done successfully, but there was an error while attempting to make it into an image.\n'
-            'Please report the admin @FYI_PSA\n'
-            'Sending your solved puzzle as a message instead.')
+        no_unique_solutions_flag = True
+    elif success and not (possible_err_name is None):  # pylint: disable=C0325
+        response: str = (
+            "Solving the grid was done successfully, but there was an error while attempting to make it into an image.\n"
+            "Please report the admin @FYI_PSA\n"
+            "Sending your solved puzzle as a message instead."
+            )
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, reply_to_message_id=update.message.message_id)
         gridstr = servermain.gridstring(solved_grid)
         print(gridstr)
@@ -218,12 +223,11 @@ async def process_image(update, context):
         return
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"<b>I can't solve this.</b>\n\n{possible_err_details}", reply_to_message_id=update.message.message_id, parse_mode='HTML')
-        
+
         print(f"User: {update.message.from_user.username}   |   Failed: {possible_err_name}: {possible_err_line} : {possible_err_details}")
-        
+
         raise Exception(f"{possible_err_name} : {possible_err_line} : {possible_err_details}")
-        return
-        
+
     with open(solvedimagefilename, 'rb') as img_file:
         solvedimg = img_file.read()
     with open(solvedgridfilename, 'rb') as grd_file:
@@ -232,12 +236,12 @@ async def process_image(update, context):
 
     if toomanysolutions_flag:
         captiontext: str = "Here's one of the possible solutions for your puzzle. It had more than 100 solutions!\nThe other image shows you the full grid without the rest of the image."
-    elif notuniquesolution_flag:
+    elif no_unique_solutions_flag:
         captiontext: str = "Your puzzle had multiple unique solutions.\nHere's one of them, alongside an image of only the solved puzzle."
     else:
         captiontext: str = "Solved!\nHere's the solved puzzle placed inside the original image, alongside a high quality image of only the solved grid."
     await context.bot.send_media_group(chat_id=update.effective_chat.id, media=mediagroup, caption=captiontext)
-    
+
     print(f"User: {update.message.from_user.username}   |   File name: {img_file_name}   |   Grid: {solved_grid}")
     gc.collect()
     os.remove(solvedgridfilename)
@@ -245,10 +249,10 @@ async def process_image(update, context):
     os.remove(img_file_name)
 
 
-async def save_attachment_to_file(update, context):
+async def save_attachment_to_file(update, context) -> str:
     new_file = await update.message.effective_attachment[-1].get_file()
-    file = await new_file.download_to_drive()    
-    return file
+    new_file_name = await new_file.download_to_drive()
+    return new_file_name
 
 
 async def error_handler(update, context):
@@ -264,41 +268,41 @@ async def error_handler(update, context):
         logging.error(f"An unexpected exception, you should investigate: {err}")
         error = sys.exc_info()[-1]
         if error is None:
-            print(f'Was not a exception from the code apparently.')
+            print("Was not a exception from the code apparently.")
         else:
-            print(f'Was indeed a valid exception, line {error.tb_lineno}')
+            print(f"Was indeed a valid exception, line {error.tb_lineno}")
         print('\n\n')
         return
 
 
-def main(token, adminid):
+def main(bot_token, admin_id):
     global stop_listening
     time.sleep(0.1)
-    
+
     sock = bind_port()
     sock_listener_thread = threading.Thread(target=sock_listener, args=(sock, ))
     sock_listener_thread.start()
-    
+
     event_loop = get_or_create_eventloop()
 
-    application = ApplicationBuilder().token(f"{token}").build()
-    
+    application = ApplicationBuilder().token(f"{bot_token}").build()
+
     start_handler = CommandHandler('start', start)
     help_handler = CommandHandler('help', help)
-    echo_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), echo)
+    message_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), respond_messages)
     image_handler = MessageHandler(filters.PHOTO & (filters.FORWARDED | ~filters.FORWARDED), process_image)
 
-    # the order of these is important, otherwise if you put a general rule after a specific rule, the specific will be overridden 
+    # the order of these is important, otherwise if you put a general rule after a specific rule, the specific will be overridden
     application.add_handler(start_handler)
     application.add_handler(help_handler)
-    application.add_handler(echo_handler)
+    application.add_handler(message_handler)
     application.add_handler(image_handler)
 
     application.add_error_handler(error_handler)
 
-    event_loop.run_until_complete(notifystart(application, adminid))
+    event_loop.run_until_complete(notifystart(application, admin_id))
     application.run_polling()
-    
+
     print("Mainloooop... died... sigterm...")
     stop_listening = True
     sock_listener_thread.join()
@@ -307,21 +311,23 @@ def main(token, adminid):
 
 if __name__ == '__main__':
     try:
-        token = os.getenv('BOT_TOKEN') # github secrets
+        token = os.getenv('BOT_TOKEN')  # github secrets
         adminid = os.getenv('ADMIN_ID')
         if token is None:
-            with open('/etc/secrets/BOT_TOKEN.txt', 'r') as file:
-                token = file.read().strip()
+            with open('/etc/secrets/BOT_TOKEN.txt', 'rb') as file:  # render secrets
+                token = file.read().decode('utf-8').strip()
         if adminid is None:
-            with open('/etc/secrets/ADMIN_ID.txt', 'r') as file:
-                adminid = file.read().strip()
-    except:
-        raise Exception("Token or Admin's ID not found. Either set BOT_TOKEN / ADMIN_ID in environment, or have the BOT_TOKEN.txt or ADMIN_ID.txt file in /etc/secrets/")
+            with open('/etc/secrets/ADMIN_ID.txt', 'rb') as file:  # this one is less secret and more to avoid hard coding
+                adminid = file.read().decode('utf-8').strip()
+    except (PermissionError, UnicodeDecodeError) as err:
+        raise Exception("Token or Admin's ID not found. Either set BOT_TOKEN / ADMIN_ID in environment, or have the BOT_TOKEN.txt or ADMIN_ID.txt file in /etc/secrets/") from err
+
     try:
-        adminid = int(str(adminid).strip())
-        token = str(token).strip()
-    except:
-        raise Exception("Wrong type!! Admin's ID is supposed to be the integer user ID")
+        ADMINID = int(str(adminid).strip())
+        TOKEN = str(token).strip()
+    except ValueError as err:
+        raise Exception("Wrong type!! Admin's ID is supposed to be the integer user ID") from err
+
     try:
         main(token, adminid)
         print("Mainloop looped.")
