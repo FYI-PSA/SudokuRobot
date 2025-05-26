@@ -100,7 +100,7 @@ def sock_listener(sock):
     # apparently ._closed is private so it most likely won't work how I expect it to.
     while not stop_listening:
         sock.listen(10)
-        connection, address = sock.accept()
+        connection, address = sock.accept()  # pylint: disable=W0612
         with connection:
             # print(f'Recieved connection by {address}')
             # data = connection.recv(1024).decode('utf-8')
@@ -172,7 +172,7 @@ async def process_image(update, context):
     img_file_name = str(img_file_name)
     print(f"Saved the file as {img_file_name}")
     response_tuple = servermain.servermain(
-         AImodel=AImodel,
+         ai_model=AImodel,
          filename=img_file_name,
          predict_grayscale_func=predict_grayscale_func
     )
@@ -249,13 +249,13 @@ async def process_image(update, context):
     os.remove(img_file_name)
 
 
-async def save_attachment_to_file(update, context) -> str:
+async def save_attachment_to_file(update, context) -> str:  # pylint: disable=W0613
     new_file = await update.message.effective_attachment[-1].get_file()
     new_file_name = await new_file.download_to_drive()
     return new_file_name
 
 
-async def error_handler(update, context):
+async def error_handler(update, context):  # pylint: disable=W0613
     err = context.error
     # print(f"You sneaky moron! Stop trying to error!")
     if isinstance(err, Conflict):

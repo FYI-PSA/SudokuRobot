@@ -2,7 +2,7 @@ import numpy as np
 from PIL import Image, ImageOps
 import cv2
 from copy import deepcopy
-from typing import Tuple, List
+from typing import Tuple
 # from matplotlib import pyplot as plt
 
 import gc
@@ -11,16 +11,21 @@ import logging
 print = logging.info
 
 
-class plot():
+class Plot():
     def __init__(self):
         pass
+
     def title(self, string):
         pass
+
     def imshow(self, img, cmap=''):
         pass
+
     def show(self):
         pass
-plt = plot()
+
+
+plt = Plot()
 
 
 def rgb_image_from_file(fname: str) -> Image.Image:
@@ -66,12 +71,12 @@ def recognition_blur(firstthresh: np.ndarray) -> np.ndarray:
 
 def rgb_image_to_inverse_treshholded_grayscale(rgb_image: np.ndarray, purpose: str = 'detect', blurdiff: int = 0, debug: bool = False):
     # my solution to this section
-    
+
     threshhold, firstthresh = cv2.threshold(image_to_grayscale(rgb_image), 0.0, 255.0, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
     # otsu's method find a midrange average by averaging the most and the least (+ other math opts probably)
     # the inv_binary_threshhold just makes a black and white image with black in the background to threshhold at 50% with white in the background instead
-    
+
     if purpose == 'detect':
         blurred = detection_blur(firstthresh, blurdiff)
     else:
@@ -79,11 +84,11 @@ def rgb_image_to_inverse_treshholded_grayscale(rgb_image: np.ndarray, purpose: s
 
     # threshhold, secondthresh = cv2.threshold(firstthresh, 0.0, 255.0, cv2.THRESH_BINARY + cv2.THRESH_OTSU)  # I have 0 clue why I made it blurred just to not use it?? I need to use blur, sometimes I'm stupid.
     threshhold, secondthresh = cv2.threshold(blurred, 0.0, 255.0, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    
+
     # make sure it's actually an inverted mostly-black black-and-white image:
     if np.average(secondthresh) > (255.0/2.1):
         secondthresh = 255.0 - secondthresh
-    
+
     secondthresh = np.asarray(secondthresh, dtype=np.uint8)
 
     if debug:  # simply because sometimes it's annoying.
@@ -93,7 +98,7 @@ def rgb_image_to_inverse_treshholded_grayscale(rgb_image: np.ndarray, purpose: s
         plt.title('double threshholded inversed blurred')
         plt.imshow(secondthresh, cmap='Greys')
         plt.show()
-    
+
     return secondthresh
 
 
@@ -103,9 +108,9 @@ def rectangle_contours_from_inverse_threshholded_image(threshholded_img: np.ndar
     # contours = cv2.findContours(deepcopy(threshholded_img), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]  # this returns the outer ones but sometimes depending on the colors can get weird and not work.
     # contours = cv2.findContours(deepcopy(threshholded_img), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)[0]  # this returns all of the simpler ones
     contours = cv2.findContours(deepcopy(threshholded_img), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0]  # this returns ALL of them, I think it's better but I'm afraid of the implications on a busy screen.
-    
+
     w, h = np.shape(threshholded_img)[0:2]
-    
+
     rectangles = [(0, 0, w, h)]
     if debug:
         print(f'Base rectanlge: The image itself: {[i for i in rectangles[0]]}')
@@ -120,7 +125,7 @@ def rectangle_contours_from_inverse_threshholded_image(threshholded_img: np.ndar
             rectangles.append(cv2.boundingRect(c))
             if debug:
                 print(f'New rectangle: {[i for i in rectangles[-1]]}')
-    
+
     return rectangles
 
 
@@ -245,7 +250,7 @@ def debug_display_rectangles(rectangle_boxes: list, rgb_image):
     c = 1
     t = len(rectangle_boxes)
     for b in rectangle_boxes:
-        print(f' {c:{"0"}>3} / {t:{"0"}>3} :   { ", ".join( [str(i) for i in b] ) } ' )  # this is horrible lol
+        print(f' {c:{"0"}>3} / {t:{"0"}>3} :   { ", ".join( [str(i) for i in b] ) } ')  # this is horrible lol
         rectangular_mask = draw_boundary_to_new_mask(b, rgb_image)
         debug_draw_mask_to_original_image(rectangular_mask, rgb_image)
         c += 1
@@ -253,18 +258,18 @@ def debug_display_rectangles(rectangle_boxes: list, rgb_image):
 
 def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool = False, moredebug: bool = False) -> list:
     rgb_image = rgb_image_from_file(filename)
-    
+
     blurmode = 0
     success = False
-    badimage = False
+    # badimage = False
     finish = False
     most_rects = []
     most_count = 0
     best_mode = -1
 
     largest_square = (0, 0, 0, 0)
-    largest_square_image = np.ndarray([],dtype=np.uint8)
-    largest_suqare_rectangles = []
+    largest_square_image = np.ndarray([], dtype=np.uint8)
+    # largest_suqare_rectangles = []
     largest_square_mode = -1
     while not finish:
         try:
@@ -293,36 +298,37 @@ def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool =
                 print("Ran out of blur modes.")
         finally:
             blurmode += 1
-    
+
     if not success:
         if debug:
-            print(f"Unsuccessful. Displaying the most amount of rectangles ({most_count}) that was accuired during mode {best_mode}")    
+            print(f"Unsuccessful. Displaying the most amount of rectangles ({most_count}) that was accuired during mode {best_mode}")
             debug_display_rectangles(most_rects, rgb_image)
         raise BadImageException("Your image didn't have any shapes almost resembling a square or a grid.\nThis could be an issue of too-similarly colored edges on the boxes, or a low quality image.")
 
     if debug:
         print(f"At least one grid was recognised using blur mode(s) {largest_square_mode} and {best_mode}! Woo hoo!")
-    
+
     if debug and moredebug:
         print(f"*Most* rectangles found but not neccasarily the biggest square in them: Mode {largest_square_mode}")
         debug_display_rectangles(most_rects, rgb_image)
         print(f"*Biggest* square found but not neccasarily the most rectangles in them: Mode {largest_square_mode}")
         debug_display_rectangles(largest_square_rectangles, rgb_image)
-    
+
     if debug:
         plt.title("Largest recognised square in all of the image:")
         plt.imshow(largest_square_image)
         plt.show()
         square_mask = draw_boundary_to_new_mask(largest_square, rgb_image)
         debug_draw_mask_to_original_image(square_mask, rgb_image)
-    
+
     grid = largest_square_image
     inverse_clean_grid = rgb_image_to_inverse_treshholded_grayscale(grid, purpose='recognise', debug=debug)
     borderless_inverse_clean_grid = remove_border_pixels(inverse_clean_grid, margin_percent=0.5)
     tiles: list = split_square_to_81(borderless_inverse_clean_grid)
     clean_tiles: list = list(map(clean_tile, tiles))
-    
+
     return clean_tiles
+
 
 # If I face more memory issues:
 # 1. lower the size of the numbers/ files
@@ -347,20 +353,20 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
             side = image.width + 25
             checked_side = True
         picdict.update({key: image})
-    
+
     gc.collect()
 
     initial_size = (side*9, side*9)
     print(f"size before resize: {initial_size}")
     image: Image.Image = Image.new('RGB', initial_size)
-    
+
     for i, n in enumerate(tiles):
         row = i // 9
         col = i % 9
         c_tile = picdict[f'{n}.png']
-        
+
         new_tile = np.asarray(c_tile, dtype=np.uint8)[:, :, [2, 1, 0]]  # BGR mode for CV2
-        
+
         # cv2.copyMakeBorder order: top bottom left right
 
         # the order of the white borders first and then the black ones matters.
@@ -370,7 +376,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         if (col % 3 == 2) and (col != 8):
             mark_edge[3] = True
             # right
-        
+
         elif (col % 3 == 0) and (col != 0):
             mark_edge[2] = True
             # left
@@ -378,7 +384,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         if (row % 3 == 2) and (row != 8):
             mark_edge[1] = True
             # bottom
-        
+
         elif (row % 3 == 0) and (row != 0):
             mark_edge[0] = True
             # top
@@ -386,15 +392,13 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         black_edges = [thicker_edge if mark else 0 for mark in mark_edge]
         white_edges = [0 if mark else thicker_edge for mark in mark_edge]
 
-    
         new_tile = cv2.copyMakeBorder(new_tile,   white_edges[0], white_edges[1], white_edges[2], white_edges[3],   cv2.BORDER_CONSTANT, value=(255, 255, 255))
         new_tile = cv2.copyMakeBorder(new_tile,   black_edges[0], black_edges[1], black_edges[2], black_edges[3],   cv2.BORDER_CONSTANT, value=(0, 0, 0))
 
         new_tile = Image.fromarray(new_tile[:, :, [2, 1, 0]])  # Back to RGB mode for Pillow
-        
+
         # add a black border around invidual numbers
         new_tile = ImageOps.expand(new_tile, border=border_thick, fill='black')
-
 
         new_tile = new_tile.resize((side, side), Image.LANCZOS)
 
@@ -405,7 +409,6 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         del black_edges
         del white_edges
 
-    
     del picdict
     gc.collect()
 
@@ -416,20 +419,20 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
     return image
 
 
-def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list) -> Tuple[Tuple[int, int, int, int], Image.Image, Image.Image, bool]: 
+def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list) -> Tuple[Tuple[int, int, int, int], Image.Image, Image.Image, bool]:
     org_rgb_image: Image.Image = rgb_image_from_file(filename)
     rgb_image = deepcopy(org_rgb_image)
     blurmode = 0
     success = False
-    badimage = False
+    # badimage = False
     finish = False
-    most_rects = []
+    # most_rects = []
     most_count = 0
-    most_mode = -1
+    # most_mode = -1
     largest_square = (0, 0, 0, 0)
-    largest_square_image = np.ndarray([],dtype=np.uint8)
-    largest_suqare_rectangles = []
-    largest_square_mode = -1
+    largest_square_image = np.ndarray([], dtype=np.uint8)
+    # largest_suqare_rectangles = []
+    # largest_square_mode = -1
     while not finish:
         try:
             threshholded_grayscale_image = rgb_image_to_inverse_treshholded_grayscale(rgb_image, purpose='detect', blurdiff=blurmode)
@@ -437,15 +440,15 @@ def write_solved_grid_to_image(newfilename: str, filename: str, tile_list: list)
             count = len(rectangle_boxes)
             if count == max(most_count, count):
                 most_count = count
-                most_rects = deepcopy(rectangle_boxes)
-                most_mode = blurmode
+                # most_rects = deepcopy(rectangle_boxes)
+                # most_mode = blurmode
             square_image, square_properties = rectangles_to_square_image(rectangle_boxes, rgb_image)
             x, y, w, h = square_properties
             if w > largest_square[2]:
                 largest_square = deepcopy(square_properties)
                 largest_square_image = deepcopy(square_image)
-                largest_square_rectangles = deepcopy(rectangle_boxes)
-                largest_square_mode = deepcopy(blurmode)
+                # largest_square_rectangles = deepcopy(rectangle_boxes)
+                # largest_square_mode = deepcopy(blurmode)
             success = True
         except BadImageException:
             pass
@@ -491,13 +494,15 @@ def main() -> None:
 
     tile_images = process_image_file_to_list_of_polished_np_tiles(filename=filename, debug=True, moredebug=False)
     print(len(tile_images))
-    
+
     gridimagefilename = 'grid_solved.png'
-    test_tiles = [((i%9)+(i//9))%10 for i in range(1, 82)]
+    test_tiles = [(((i % 9)+(i // 9)) % 10) for i in range(1, 82)]
     square_properties, solved_grid_image, original_image, ismostlyblack = write_solved_grid_to_image(newfilename=gridimagefilename, filename=filename, tile_list=test_tiles)
 
     solvedimagefilename = 'screenshot_solved.png'
     solvedimage = write_solved_grid_to_original_image(newfilename=solvedimagefilename, largest_square=square_properties, solved_grid=solved_grid_image, org_rgb_image=original_image, mostly_black=ismostlyblack)
+    plt.imshow(solvedimage)
+    plt.show()
 
 
 if __name__ == '__main__':
