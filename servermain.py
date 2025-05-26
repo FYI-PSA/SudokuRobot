@@ -288,7 +288,7 @@ class Solver():
                         expanded_answer = []
                         for row in answer:
                             expanded_answer.extend(row)
-                        if not (expanded_answer in self.solutions):
+                        if not (expanded_answer in self.SOLUTIONS):
                             self.SOLUTIONS.append(deepcopy(expanded_answer))
                             self.COUNT += 1
                             if self.COUNT > 100:
