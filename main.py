@@ -187,10 +187,26 @@ async def process_image(update, context):
      possible_err_line) = response_tuple
 
     print("Woohoo! The heart beat and did its thing!")
-    
+    toomanysolutions_flag = False
+    notuniquesolutions_flag = False
     if success and (possible_err_name is None):
         # await context.bot.send_message(chat_id=update.effective_chat.id, text="Excellent", reply_to_message_id=update.message.message_id)
         pass
+    elif success and (possible_err_name == 'Too many solutions'):
+        response: str = ('Your puzzle had more than 100 possible solutions!\n'
+            'If your grid was not empty or you think the number of solutions is less than a hundred,\n'
+            'please message the admin @FYI_PSA about this.')
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=response, reply_to_message_id=update.message.message_id)
+        # no return, do the rest of the code too.
+        toomanysolutions_flag = True
+        notuniquesolutions_flag = True
+    elif success and (possible_err_name == 'Solutions not unique'):
+        response: str = ("Your didn't have a unique solution.\n"
+            'If you think the puzzle only has one unique solution,\n'
+            'please message the admin @FYI_PSA about this.')
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=response, reply_to_message_id=update.message.message_id)
+        # no return, do the rest of the code too.
+        notuniquesolutions_flag = True
     elif success and (not (possible_err_name is None)):
         response: str = ('Solving the grid was done successfully, but there was an error while attempting to make it into an image.\n'
             'Please report the admin @FYI_PSA\n'
@@ -213,7 +229,14 @@ async def process_image(update, context):
     with open(solvedgridfilename, 'rb') as grd_file:
         solvedgrd = grd_file.read()
     mediagroup = [InputMediaPhoto(media=solvedimg), InputMediaPhoto(media=solvedgrd)]
-    await context.bot.send_media_group(chat_id=update.effective_chat.id, media=mediagroup, caption="Solved!\nHere's the solved puzzle placed inside the original image, alongside a high quality image of only the solved grid.")
+
+    if toomanysolutions_flag:
+        captiontext: str = "Here's one of the possible solutions for your puzzle. It had more than 100 solutions!\nThe other image shows you the full grid without the rest of the image."
+    elif notuniquesolution_flag:
+        captiontext: str = "Your puzzle had multiple unique solutions.\nHere's one of them, alongside an image of only the solved puzzle."
+    else:
+        captiontext: str = "Solved!\nHere's the solved puzzle placed inside the original image, alongside a high quality image of only the solved grid."
+    await context.bot.send_media_group(chat_id=update.effective_chat.id, media=mediagroup, caption=captiontext)
     
     print(f"User: {update.message.from_user.username}   |   File name: {img_file_name}   |   Grid: {solved_grid}")
     gc.collect()

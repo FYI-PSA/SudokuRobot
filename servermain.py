@@ -74,169 +74,195 @@ def breakdowntoset(smalllistorstr):
     return largerset
 
 
-# CONSTANTS
-global ALL, EMPTYGRID
-M = 9
-ALL = set(range(1, M+1))
-CHECK_CELLS = [(0, 0), (1, 3), (2, 6), (3, 1), (4, 4), (5, 7), (6, 2), (7, 5), (8, 8)]  # Definitely mathematically reduntant and can be reduced.
-# I don't want to do that though, too lazy. Deal with it, it's not slow enough to care about.
-GRID = list([[0 for _ in range(M)] for _ in range(M)])
-EMPTYGRID = deepcopy(GRID)
+class SolutionsNotUniqueException(Exception):
+    pass
 
 
-def SolveByGrid(base) -> tuple:  # takes a base grid and tries to solve for lonely items. returns a candidate-filled kinda-solved grid and the normal kinda-solved grid
-    global ALL
-    grid = deepcopy(base)
-    candid = deepcopy(grid)
-    for i, row in enumerate(grid):
-        for j, item in enumerate(row):
-            if item == 0:
-                temp_ = row
-                neighbours = deepcopy(temp_)
-                temp_ = [_r[j] for _r in grid]
-                neighbours.extend(temp_)
-                box_i = i // 3
-                box_j = j // 3
-                temp_ = []
-                for i_, row_ in enumerate(grid[box_i*3:(box_i+1)*3]):
-                    for j_, item_ in enumerate(row_[box_j*3:(box_j+1)*3]):
-                        temp_.append(item_)
-                neighbours.extend(temp_)
-                neighbours = set(neighbours)
-                neighbours.remove(0)
-                possible = ALL - neighbours
-                if len(possible) == 1:
-                    grid[i][j] = next(iter(possible))
-                    candid[i][j] = next(iter(possible))
-                elif len(possible) > 1:
-                    candid[i][j] = '-'.join([str(i) for i in iter(possible)])
-    return (candid, grid)
+class TooManySolutionsException(SolutionsNotUniqueException):
+    pass
 
 
-def SolveByCandid(candidbase, gridbase) -> list:  # takes a candidate-containing grid and the normal grid and tries to solve based on being the only candidate for a number in a set. returns a kinda-solved normal grid
-    global ALL
-    candid = deepcopy(candidbase)
-    grid = deepcopy(gridbase)
-    for i, row in enumerate(candid):
-        for j, item in enumerate(row):
-            if not isinstance(item, int):
-                itemsuperpos = set(map(int, item.split('-')))  # Never used, but I'm too afraid to remove this.
-                neighbour_row = [k for (_, k) in enumerate(row) if (_ != j)]
-                n_r = breakdowntoset(neighbour_row)
-                neighbour_col = [r_[j] for (k, r_) in enumerate(candid) if (k != i) ]
-                n_c = breakdowntoset(neighbour_col)
-                box = []
-                box_i = i // 3
-                box_j = j // 3
-                for i_, row_ in enumerate(candid[box_i*3:(box_i+1)*3]):
-                    for j_, item_ in enumerate(row_[box_j*3:(box_j+1)*3]):
-                        if i_ == (i % 3) and j_ == (j % 3):
-                            continue
-                        box.append(item_)
-                n_b = breakdowntoset(box)
-                # THIS OPERATION IS NOT GLOBAL
-                # IT APPLIES SEPERATELY TO EACH LOCK
-                #   What did I mean by this when I added it when first writing this?? I genuinly don't know...
-                r_r = ALL - n_r
-                r_c = ALL - n_c
-                r_b = ALL - n_b
-                if len(r_r) == 1:
-                    grid[i][j] = next(iter(r_r))
-                if len(r_c) == 1:
-                    grid[i][j] = next(iter(r_c))
-                if len(r_b) == 1:
-                    grid[i][j] = next(iter(r_b))
-    return grid
+global EMPTYGRID
+EMPTYGRID = list([[0 for _ in range(9)] for _ in range(9)])
 
 
-def SimpleSolve(gridbase) -> tuple:  # takes a normal unsolved grid, and tries to solve it using the two functions above. returns a potentially condidate-containing grid and a potentially solved grid.
-    global EMPTYGRID
-    grid = deepcopy(gridbase)
-    candid = deepcopy(grid)
-    copygrid = deepcopy(EMPTYGRID)
-    copycandid = deepcopy(EMPTYGRID)
-    copytotal = deepcopy(EMPTYGRID)
-    firsttotal = True
-    firstgrid = True
-    firstcandid = True
-    while copytotal != grid or firsttotal:
-        firsttotal = False
-        copytotal = deepcopy(grid)
-        while copygrid != grid or firstgrid:
-            firstgrid = False
-            copygrid = deepcopy(grid)
-            candid, grid = SolveByGrid(grid)
-        # runs until SolveByGrid doesn't change grid
-        while copycandid != grid or firstcandid:
-            firstcandid = False
-            copycandid = deepcopy(grid)
-            grid = SolveByCandid(candid, grid)
-        # runs until SolveByCandid doesn't change grid
-        candid, grid = SolveByGrid(grid)
-    return (candid, grid)
+
+class Solver():
+    def __init__(self, grid: list):
+        global EMPTYGRID
+        # CONSTANTS
+        self.ALL = set(range(1, 10))
+        self.CHECK_CELLS = [(0, 0), (1, 3), (2, 6), (3, 1), (4, 4), (5, 7), (6, 2), (7, 5), (8, 8)]
+        # Definitely mathematically reduntant and can be reduced.
+        # I don't want to do that though, too lazy. Deal with it, it's not slow enough to care about.
+        self.GRID = deepcopy(EMPTYGRID)
+        self.SOLUTIONS = []
+        self.COUNT = 0
+        self.grid = grid
+        self.first_grid = deepcopy(grid)
 
 
-# solves the grid by trying the simple solve methods on it,
-#   "SimpleSolve" method: 
-#     1.single possibility tiles become just that possibility, 
-#     2.if a number can only be in once space of a row/coloumn/box, then that tile becomes the number it can only be there.  
-# then applying a brute force technique to any unsolved tiles and then trying itself again. 
-# takes an unsolved grid as input and returns a boolean for it was solvable alongside a hopefully solved grid.
-def GuessworkSolve(gridbase, debug=False) -> tuple:  
-    candid, grid = SimpleSolve(gridbase)
-    if not CheckValidGrid(grid):
-        return (False, grid)
-    if debug:
-        print(colored("[#] Debug turn:\n", "light_yellow"))
-        gridprint(candid)
-        print("")
-    for i, row in enumerate(grid):
-        for j, item in enumerate(row):
-            if item != 0:
-                continue
-            candidatestr = candid[i][j]
-            # If a set is of length less than one, then SimpleSolve doesn't assign it a candidate string in the candidates, leaving it as 0.
-            if not isinstance(candidatestr, str):
+    def SolveByGrid(self, inputgrid) -> tuple:  # takes a base grid and tries to solve for lonely items. returns a candidate-filled kinda-solved grid and the normal kinda-solved grid
+        grid = deepcopy(inputgrid)
+        candid = deepcopy(grid)
+        for i, row in enumerate(grid):
+            for j, item in enumerate(row):
+                if item == 0:
+                    temp_ = row
+                    neighbours = deepcopy(temp_)
+                    temp_ = [_r[j] for _r in grid]
+                    neighbours.extend(temp_)
+                    box_i = i // 3
+                    box_j = j // 3
+                    temp_ = []
+                    for i_, row_ in enumerate(grid[box_i*3:(box_i+1)*3]):
+                        for j_, item_ in enumerate(row_[box_j*3:(box_j+1)*3]):
+                            temp_.append(item_)
+                    neighbours.extend(temp_)
+                    neighbours = set(neighbours)
+                    neighbours.remove(0)
+                    possible = self.ALL - neighbours
+                    if len(possible) == 1:
+                        grid[i][j] = next(iter(possible))
+                        candid[i][j] = next(iter(possible))
+                    elif len(possible) > 1:
+                        candid[i][j] = '-'.join([str(i) for i in iter(possible)])
+        return (candid, grid)
+
+
+    def SolveByCandid(inputcandids, inputgrid) -> list:  # takes a candidate-containing grid and the normal grid and tries to solve based on being the only candidate for a number in a set. returns a kinda-solved normal grid
+        candid = deepcopy(inputcandids)
+        grid = deepcopy(inputgrid)
+        for i, row in enumerate(candid):
+            for j, item in enumerate(row):
+                if not isinstance(item, int):
+                    itemsuperpos = set(map(int, item.split('-')))  # Never used, but I'm too afraid to remove this.
+                    neighbour_row = [k for (_, k) in enumerate(row) if (_ != j)]
+                    n_r = breakdowntoset(neighbour_row)
+                    neighbour_col = [r_[j] for (k, r_) in enumerate(candid) if (k != i) ]
+                    n_c = breakdowntoset(neighbour_col)
+                    box = []
+                    box_i = i // 3
+                    box_j = j // 3
+                    for i_, row_ in enumerate(candid[box_i*3:(box_i+1)*3]):
+                        for j_, item_ in enumerate(row_[box_j*3:(box_j+1)*3]):
+                            if i_ == (i % 3) and j_ == (j % 3):
+                                continue
+                            box.append(item_)
+                    n_b = breakdowntoset(box)
+                    # THIS OPERATION IS NOT GLOBAL
+                    # IT APPLIES SEPERATELY TO EACH LOCK
+                    #   What did I mean by this when I added it when first writing this?? I genuinly don't know...
+                    r_r = self.ALL - n_r
+                    r_c = self.ALL - n_c
+                    r_b = self.ALL - n_b
+                    if len(r_r) == 1:
+                        grid[i][j] = next(iter(r_r))
+                    if len(r_c) == 1:
+                        grid[i][j] = next(iter(r_c))
+                    if len(r_b) == 1:
+                        grid[i][j] = next(iter(r_b))
+        return grid
+
+
+    def SimpleSolve(inputgrid) -> tuple:  # takes a normal unsolved grid, and tries to solve it using the two functions above. returns a potentially condidate-containing grid and a potentially solved grid.
+        grid = deepcopy(inputgrid)
+        candid = deepcopy(grid)
+        copygrid = deepcopy(EMPTYGRID)
+        copycandid = deepcopy(EMPTYGRID)
+        copytotal = deepcopy(EMPTYGRID)
+        firsttotal = True
+        firstgrid = True
+        firstcandid = True
+        while copytotal != grid or firsttotal:
+            firsttotal = False
+            copytotal = deepcopy(grid)
+            while copygrid != grid or firstgrid:
+                firstgrid = False
+                copygrid = deepcopy(grid)
+                candid, grid = self.SolveByGrid(grid)
+            # runs until SolveByGrid doesn't change grid
+            while copycandid != grid or firstcandid:
+                firstcandid = False
+                copycandid = deepcopy(grid)
+                grid = self.SolveByCandid(candid, grid)
+            # runs until SolveByCandid doesn't change grid
+            candid, grid = self.SolveByGrid(grid)
+            # this last step is to generate the candid grid
+        return (candid, grid)
+
+
+    # solves the grid by trying the simple solve methods on it,
+    #   "SimpleSolve" method: 
+    #     1.single possibility tiles become just that possibility, 
+    #     2.if a number can only be in once space of a row/coloumn/box, then that tile becomes the number it can only be there.  
+    # then applying a brute force technique to any unsolved tiles and then trying itself again. 
+    # takes an unsolved grid as input and returns a boolean for it was solvable alongside a hopefully solved grid.
+    def OLD_GuessworkSolve(self, gridbase, debug=False) -> tuple:  
+        candid, grid = self.SimpleSolve(gridbase)
+        if not self.CheckValidGrid(grid):
+            return (False, grid)
+        if debug:
+            print(colored("[#] Debug turn:\n", "light_yellow"))
+            gridprint(candid)
+            print("")
+        for i, row in enumerate(grid):
+            for j, item in enumerate(row):
+                if item != 0:
+                    continue
+                candidatestr = candid[i][j]
+                # If a set is of length less than one, then SimpleSolve doesn't assign it a candidate string in the candidates, leaving it as 0.
+                if not isinstance(candidatestr, str):
+                    if debug:
+                        print(colored("[#] *BEEP*! Reached a wrong answer, sorry!", "magenta"))
+                    return (False, deepcopy(grid))
+                candidates = breakdowntoset(candidatestr)
+                
+                for r_ in candid:  # Prevent the code from going down a spiral when already a grid is definitely unsolvable.
+                    # the impossibility check is to check if anyone is candid grid is 0, which means unsolvable.
+                    for j_ in r_:
+                        if j_ == 0:
+                            return (False, deepcopy(grid))
+
+                candidates = list(candidates)
+                candidates.sort()
+                # if reaching this point:
+                # a number on the grid is missing, and it has possible values as ints in an ordered list from small to large.
+                for p in candidates:
+                    testgrid = []
+                    testgrid = deepcopy(grid)
+                    testgrid[i][j] = p
+                    couldbesolved, answer = self.OLD_GuessworkSolve(testgrid, debug=debug)
+                    if couldbesolved and self.CheckValidGrid(answer):
+                        return (True, answer)
+                # it's impossible for it not to be one of the values that are possible for a number, so if reaching this point, automatically assume failure.
                 if debug:
-                    print(colored("[#] *BEEP*! Reached a wrong answer, sorry!", "magenta"))
+                    print(colored("[#] Assuming failure.", "magenta"))
                 return (False, deepcopy(grid))
-            candidates = breakdowntoset(candidatestr)
-            
-            for r_ in candid:  # Prevent the code from going down a spiral when already a grid is definitely unsolvable.
-                # the impossibility check is to check if anyone is candid grid is 0, which means unsolvable.
-                for j_ in r_:
-                    if j_ == 0:
-                        return (False, deepcopy(grid))
-
-            candidates = list(candidates)
-            candidates.sort()
-            # if reaching this point:
-            # a number on the grid is missing, and it has possible values as ints in an ordered list from small to large.
-            for p in candidates:
-                testgrid = []
-                testgrid = deepcopy(grid)
-                testgrid[i][j] = p
-                couldbesolved, answer = GuessworkSolve(testgrid, debug=debug)
-                if couldbesolved and CheckValidGrid(answer):
-                    return (True, answer)
-            # it's impossible for it not to be one of the values that are possible for a number, so if reaching this point, automatically assume failure.
-            if debug:
-                print(colored("[#] Assuming failure.", "magenta"))
-            return (False, deepcopy(grid))
-    # by this point:
-    # the grid must already be solved, not be wrong, not have any emptiness if it's not returned yet.
-    # so it'll always return True on checkValidgrid because of the first few lines of this function doing that.
-    # return (CheckValidGrid(grid), deepcopy(grid))
-    return (True, deepcopy(grid))
+        # by this point:
+        # the grid must already be solved, not be wrong, not have any emptiness if it's not returned yet.
+        # so it'll always return True on checkValidgrid because of the first few lines of this function doing that.
+        # return (CheckValidGrid(grid), deepcopy(grid))
+        return (True, deepcopy(grid))
 
 
-class SolutionCounter():
-    def __init__(self, count: int = 0):
-        self.count = 0
-        self.solutions = []
-    def CountSolve(self, gridbase, debug=False) -> tuple:  
-        candid, grid = SimpleSolve(gridbase)
-        if not CheckValidGrid(grid):
+    def GuessworkSolve(self) -> tuple:
+        if self.SOLUTIONS != []:
+            return (True, self.SOLUTIONS[0])
+        # else:
+        self.CountSolve(self.grid)
+        if self.SOLUTIONS != []:
+            return (True, self.SOLUTIONS[0])
+        # else:
+        print(' im so sad, there aint a solution! \n\n\n\n\n  I SAID IM SADDDDDDD!!!')
+        status, result = self.OLD_GuessworkSolve(self.first_grid)
+        print(status, result)
+        return (status, result)
+
+
+    def CountSolve(self, inputgrid) -> tuple:  
+        candid, grid = SimpleSolve(inputgrid)
+        if not self.CheckValidGrid(grid):
             return (False, grid)
         for i, row in enumerate(grid):
             for j, item in enumerate(row):
@@ -256,62 +282,65 @@ class SolutionCounter():
                     testgrid = []
                     testgrid = deepcopy(grid)
                     testgrid[i][j] = p
-                    couldbesolved, answer = self.CountSolve(testgrid, debug=debug)
-                    if couldbesolved and CheckValidGrid(answer):
+                    couldbesolved, answer = self.CountSolve(testgrid)
+                    if couldbesolved and self.CheckValidGrid(answer):
                         # return (True, answer)
                         expanded_answer = []
                         for row in answer:
                             expanded_answer.extend(row)
                         if not (expanded_answer in self.solutions):
-                            self.solutions.append(deepcopy(expanded_answer))
-                            self.count += 1
-                            if self.count >= 100:
-                                raise Exception("Too many solutions! I counted at least 100!")
+                            self.SOLUTIONS.append(deepcopy(expanded_answer))
+                            self.COUNT += 1
+                            if self.COUNT > 100:
+                                raise TooManySolutionsException("Too many solutions! I counted at least 100!")
                 return (False, deepcopy(grid))
         expanded_answer = []
         answer = deepcopy(grid)
         for row in answer:
             expanded_answer.extend(row)
-        if not (expanded_answer in self.solutions):
-            self.solutions.append(deepcopy(expanded_answer))
-            self.count += 1
-            if self.count >= 100:
-                raise Exception("Too many solutions! I counted at least 100!")
+        if not (expanded_answer in self.SOLUTIONS):
+            self.SOLUTIONS.append(deepcopy(expanded_answer))
+            self.COUNT += 1
+            if self.COUNT > 100:
+                raise TooManySolutionsException("Too many solutions! I counted at least 100!")
         return (True, answer)
-    def GetCount(self, gridbase) -> int:
-        self.CountSolve(gridbase, debug=False)
-        return self.count
+    
+
+    def GetCount(self) -> int:
+        if self.COUNT != 0:
+            return self.COUNT
+        # else:
+        self.CountSolve(self.grid)
+        return self.COUNT
 
 
-def CheckValidGrid(gridbase) -> bool:  # takes a solved or an unsolved grid and checks each row and column and box only once (9 total tiles) (using some tile coordinates written in the constants) for repeating numbers. returns True if no repeats and False if the grid was solved incorrectly.
-    global CHECK_CELLS
-    grid = deepcopy(gridbase)
-    for i, j in CHECK_CELLS:
-        row = gridbase[i]
-        item = row[j]
-        row_neigh = [n for n in deepcopy(row) if n != 0]
-        col_neigh = [_r[j] for _r in grid if _r[j] != 0]
-        box_i = i // 3
-        box_j = j // 3
-        box_neigh = []
-        for i_, row_ in enumerate(grid[box_i*3:(box_i+1)*3]):
-            for j_, item_ in enumerate(row_[box_j*3:(box_j+1)*3]):
-                if item_ == 0:
-                    continue
-                box_neigh.append(item_)
-        if row_neigh != []:
-            c_row = Counter(row_neigh)
-            if c_row[max(c_row, key=lambda k: c_row[k])] > 1:
-                return False
-        if col_neigh != []:
-            c_col = Counter(col_neigh)
-            if c_col[max(c_col, key=lambda k: c_col[k])] > 1:
-                return False
-        if box_neigh != []:
-            c_box = Counter(box_neigh)
-            if c_box[max(c_box, key=lambda k: c_box[k])] > 1:
-                return False
-    return True
+    def CheckValidGrid(self, inputgrid) -> bool:  # takes a solved or an unsolved grid and checks each row and column and box only once (9 total tiles) (using some tile coordinates written in the constants) for repeating numbers. returns True if no repeats and False if the grid was solved incorrectly.
+        for i, j in self.CHECK_CELLS:
+            row = inputgrid[i]
+            item = row[j]
+            row_neigh = [n for n in deepcopy(row) if n != 0]
+            col_neigh = [_r[j] for _r in grid if _r[j] != 0]
+            box_i = i // 3
+            box_j = j // 3
+            box_neigh = []
+            for i_, row_ in enumerate(grid[box_i*3:(box_i+1)*3]):
+                for j_, item_ in enumerate(row_[box_j*3:(box_j+1)*3]):
+                    if item_ == 0:
+                        continue
+                    box_neigh.append(item_)
+            if row_neigh != []:
+                c_row = Counter(row_neigh)
+                if c_row[max(c_row, key=lambda k: c_row[k])] > 1:
+                    return False
+            if col_neigh != []:
+                c_col = Counter(col_neigh)
+                if c_col[max(c_col, key=lambda k: c_col[k])] > 1:
+                    return False
+            if box_neigh != []:
+                c_box = Counter(box_neigh)
+                if c_box[max(c_box, key=lambda k: c_box[k])] > 1:
+                    return False
+        return True
 
 
 def read_gridjpg_to_grid(kerasmodel, filename, grayscale_numpy_tiles_list_to_predicted_integer_list) -> list:
@@ -339,66 +368,72 @@ def write_grid_to_gridjpg(tiles_list: list, ogfilename: str, solvedfilename: str
     print("saved grid on the original image")
 
 
-def main(model, filename, predict_grayscale_func) -> int:  # main thing with all of the main UX and styling going on. gets the time to solve, solves the grid, returns.
-    global GRID
-    GRID = read_gridjpg_to_grid(filename=filename, kerasmodel=model, grayscale_numpy_tiles_list_to_predicted_integer_list=predict_grayscale_func)
-    st = time.time()
+def main(model, filename, predict_grayscale_func) -> tuple:  
+    # main thing with all of the main UX and styling going on. gets the time to solve, solves the grid, returns the amount of solutions and the first one.
+    maingrid = read_gridjpg_to_grid(filename=filename, kerasmodel=model, grayscale_numpy_tiles_list_to_predicted_integer_list=predict_grayscale_func)
+    
     print("\n")
     print(colored("Unsolved Grid:\n", "blue"))
-    gridprint(GRID)
-    original_grid = deepcopy(GRID)
+    gridprint(maingrid)
     print("\n")
-    couldbesolved, GRID = GuessworkSolve(GRID, debug=False)  # no debug
-    et = time.time()
-    dt = round(et - st, 4)
-    print(colored(f"Time to solve: {dt} seconds", "magenta"))
-    print(colored(f"The final grid is {'CORRECT' if couldbesolved else 'INCORRECT'}\n\n\n", "green" if couldbesolved else "red"))
+    
     st = time.time()
-    counter: SolutionCounter = SolutionCounter()
-    count = counter.GetCount(original_grid)
+    
+    solution = Solver(deepcopy(maingrid))
+    couldbesolved, maingrid = solution.GuessworkSolve()
+    solutions = solution.GetCount()
+
     et = time.time()
     dt = round(et - st, 4)
-    print(colored(f"Time to check amount of unique solutions: {dt} seconds", "magenta"))
-    print(colored(f"The amount of solutions is {'only one!' if (count == 1) else f'{count}!'}\n\n\n", "blue"))
+    
+    print(colored(f"Time it took to count solutions and do the simplest solve: {dt} seconds", "magenta"))
+    print(colored(f"The final grid is {'CORRECT' if couldbesolved else 'INCORRECT'}\n\n\n", "green" if couldbesolved else "red"))
+    print(colored(f"The amount of solutions is {'only one!' if (solutions == 1) else f'{solutions}!'}\n\n\n", "lightblue" if (solutions == 1) else "blue"))
+
     if not couldbesolved:
         # expand on this
         # tell the user better details, as of right now this is WAYYY too broad
-        # print(colored("There's an error in:  1. The image quality - 2. The puzzle configuration - 3. The program", "red"))
-        # print(colored("Try sending a clearer picture, more zoomed in and clearer digits, and an obvious square grid with visibly distinct edges in the image.", "red"))
-        # print(colored("If you still face this error, check the validty of your puzzles and if it's correct or the image keeps refusing, report the issue to the admin on Telegram [@FYI_PSA](https://t.me/FYI_PSA) or open an issue report on this project's GitHub", "magenta"))
-        # print(colored("Project GitHub Page: [github.com/FYI-PSA/ImageSudokuSolver](https://github.com/FYI-PSA/ImageSudokuSolver/)", "magenta"))
-        return 1
+        # use different return codes
+        return (-1, maingrid)
+
     print("\n")
-    print(colored("Solved Grid:\n", "green"))
-    gridprint(GRID)
+    print(colored(f"{'The Solution' if (solutions == 1) else 'A Solution:'}:\n", "green"))
+    gridprint(maingrid)
     print("\n")
-    return 0
+
+    return (solutions, maingrid)
 
 
 def servermain(filename, AImodel, predict_grayscale_func):
+    global EMPTYGRID
     print('entering servermain')
-    global GRID, EMPTYGRID
-    GRID = deepcopy(EMPTYGRID)
+    
     filename = str(filename)
     name, ext = map(str, getfilenameinfo(filename))
     gridname = str(f"{name}_solved_grid.{ext}")
     solvedname = str(f"{name}_solved.{ext}")
+    
     print(f'name {name} ext {ext} gridname {gridname} solvedname {solvedname}')
+    
+    error_message, error_name, error_line = None, None, None
+
     try:
-        res = main(model=AImodel, filename=filename, predict_grayscale_func=predict_grayscale_func)
-        print('got a result')
+        countofsolutions, returnedgrid = main(model=AImodel, filename=filename, predict_grayscale_func=predict_grayscale_func)
+        print("got a result")
+    
+    except TooManySolutionsException as err_message:
+        print("got too many solutions")
+        # return (True, gridname,  solvedname, deepcopy(GRID), str(err_message), 'Too many solutions', sys.exc_info()[-1].tb_lineno)
+        error_message = str(err_message)
+        error_name = "Too many solutions"
+        error_line = sys.exc_info()[-1].tb_lineno
+
     except Exception as err_message:
-        print('got an error')
-        return (False, gridname, solvedname, deepcopy(GRID), str(err_message), type(err_message).__name__, sys.exc_info()[-1].tb_lineno)
-    if res != 0:
-        print('got no result but no error')
-        err_message_md: str = ("There's an error in one of the following:  \n"
-                            "- **The image quality**  \n"
-                            "    > Try sending a clearer picture, more zoomed in and clearer digits, and an obvious square grid with visibly distinct edges in the image.  \n"
-                            "- **The puzzle configuration**  \n"
-                            "    > If you still face this message after the previous step, check the validty of your puzzle.  \n"
-                            "- **The program**  \n"
-                            "    > If your image and puzzle are both correct and visible, report this issue to the admin on Telegram: [@FYI_PSA](https://t.me/FYI_PSA/)")
+        print("got an error")
+        return (False, gridname, solvedname, deepcopy(EMPTYGRID), str(err_message), type(err_message).__name__, sys.exc_info()[-1].tb_lineno)
+    
+    if res == -1:
+        print("got no result but no error")
         err_message_html: str = ("There's an error in one of the following:\n\n"
                             ""
                             "- <b>The image quality</b>\n"
@@ -408,21 +443,32 @@ def servermain(filename, AImodel, predict_grayscale_func):
                             "- <b>The program</b>\n"
                             "    <blockquote> If your image and puzzle are both correct and visible, report this issue to the admin on Telegram: <a href='https://t.me/FYI_PSA/'>@FYI_PSA</a> </blockquote>\n"
                             "")
-        return (False, gridname, solvedname, GRID, str(err_message_html), 'CouldNotBeSolved', 309)
+        return (False, gridname, solvedname, returnedgrid, str(err_message_html), 'CouldNotBeSolved', 309)
+    
+    elif res > 1:
+        print("got a bunch of results but less than a hundred")
+        error_message = "The puzzle didn't have a unique solutions"
+        error_name = "Solutions not unique"
+        error_line = 400
+    
     gc.collect()
     solved_tiles = []
     for row in GRID:
         solved_tiles.extend(row)
     print(f'desolved grid to {solved_tiles}')
-    # GRID = solved_tiles
-    # don't do this. I want to use gridprint in main in case the image gen fails.
+    
     try:
         write_grid_to_gridjpg(solved_tiles, filename, solvedname, gridname)   
     except Exception as err:
         print('write to file failed with an error')
-        return (True, gridname, solvedname, GRID, str(err), type(err).__name__, sys.exc_info()[-1].tb_lineno)
+        error_message = str(err)
+        error_name = type(err).__name__
+        error_line = sys.exc_info()[-1].tb_lineno
+
     print('going home...')
-    return (True, gridname, solvedname, GRID, None, None, None)
+    return (True, gridname, solvedname, returnedgrid, error_message, error_name, error_line)
+
+    # success, name of solved grid file, name of solved full image file, completed or not grid as the 9 in 9 list, error message, error name, error line 
 
 
 if __name__ == '__main__':
