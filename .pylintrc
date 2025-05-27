@@ -2,5 +2,5 @@ extension-pkg-allow-list=cv2, numpy
 extension-pkg-whitelist=cv2, numpy
 [FORMAT]
 max-line-length=500
-[MESSAGES CONROL]
+[MESSAGES CONTROL]
 disable=W0602, W0603, W0622, W0718, W0719, W1203, C0114, C0115, C0116, C0325, C0411, C0413, C1803

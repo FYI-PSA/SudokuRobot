@@ -102,7 +102,7 @@ def sock_listener(sock):
         sock.listen(10)
         connection, address = sock.accept()  # pylint: disable=W0612
         with connection:
-            # print(f'Recieved connection by {address}')
+            # print(f'Received connection by {address}')
             # data = connection.recv(1024).decode('utf-8')
             http_ver = 'HTTP/1.1'
             status = 'OK'  # https://docs.python.org/3/library/http.html#http-status-codes
@@ -124,7 +124,7 @@ async def start(update, context):
     print(f"User info:\n{user_profile}")
 
 
-async def notifystart(app, admin_id):
+async def notify_start(app, admin_id):
     await app.bot.send_message(chat_id=admin_id, text="The bot has started!")
 
 
@@ -178,15 +178,15 @@ async def process_image(update, context):
     )
     print(response_tuple)
     (success,
-     solvedgridfilename,
-     solvedimagefilename,
+     solved_grid_file_name,
+     solved_image_file_name,
      solved_grid,
      possible_err_details,
      possible_err_name,
      possible_err_line) = response_tuple
 
-    print("Woohoo! The heart beat and did its thing!")
-    toomanysolutions_flag = False
+    print("Yay! The heart beat and did its thing!")
+    too_many_solutions_flag = False
     no_unique_solutions_flag = False
     if success and (possible_err_name is None):
         # await context.bot.send_message(chat_id=update.effective_chat.id, text="Excellent", reply_to_message_id=update.message.message_id)
@@ -199,7 +199,7 @@ async def process_image(update, context):
             )
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, reply_to_message_id=update.message.message_id)
         # no return, do the rest of the code too.
-        toomanysolutions_flag = True
+        too_many_solutions_flag = True
         no_unique_solutions_flag = True
     elif success and (possible_err_name == 'Solutions not unique'):
         response: str = (
@@ -228,13 +228,13 @@ async def process_image(update, context):
 
         raise Exception(f"{possible_err_name} : {possible_err_line} : {possible_err_details}")
 
-    with open(solvedimagefilename, 'rb') as img_file:
-        solvedimg = img_file.read()
-    with open(solvedgridfilename, 'rb') as grd_file:
-        solvedgrd = grd_file.read()
-    mediagroup = [InputMediaPhoto(media=solvedimg), InputMediaPhoto(media=solvedgrd)]
+    with open(solved_image_file_name, 'rb') as img_file:
+        solved_image = img_file.read()
+    with open(solved_grid_file_name, 'rb') as grd_file:
+        solved_grid = grd_file.read()
+    mediagroup = [InputMediaPhoto(media=solved_image), InputMediaPhoto(media=solved_grid)]
 
-    if toomanysolutions_flag:
+    if too_many_solutions_flag:
         captiontext: str = "Here's one of the possible solutions for your puzzle. It had more than 100 solutions!\nThe other image shows you the full grid without the rest of the image."
     elif no_unique_solutions_flag:
         captiontext: str = "Your puzzle had multiple unique solutions.\nHere's one of them, alongside an image of only the solved puzzle."
@@ -244,8 +244,8 @@ async def process_image(update, context):
 
     print(f"User: {update.message.from_user.username}   |   File name: {img_file_name}   |   Grid: {solved_grid}")
     gc.collect()
-    os.remove(solvedgridfilename)
-    os.remove(solvedimagefilename)
+    os.remove(solved_grid_file_name)
+    os.remove(solved_image_file_name)
     os.remove(img_file_name)
 
 
@@ -300,7 +300,7 @@ def main(bot_token, admin_id):
 
     application.add_error_handler(error_handler)
 
-    event_loop.run_until_complete(notifystart(application, admin_id))
+    event_loop.run_until_complete(notify_start(application, admin_id))
     application.run_polling()
 
     print("Mainloooop... died... sigterm...")
@@ -312,24 +312,24 @@ def main(bot_token, admin_id):
 if __name__ == '__main__':
     try:
         token = os.getenv('BOT_TOKEN')  # github secrets
-        adminid = os.getenv('ADMIN_ID')
+        admin_id = os.getenv('ADMIN_ID')
         if token is None:
             with open('/etc/secrets/BOT_TOKEN.txt', 'rb') as file:  # render secrets
                 token = file.read().decode('utf-8').strip()
-        if adminid is None:
+        if admin_id is None:
             with open('/etc/secrets/ADMIN_ID.txt', 'rb') as file:  # this one is less secret and more to avoid hard coding
-                adminid = file.read().decode('utf-8').strip()
+                admin_id = file.read().decode('utf-8').strip()
     except (PermissionError, UnicodeDecodeError) as err:
         raise Exception("Token or Admin's ID not found. Either set BOT_TOKEN / ADMIN_ID in environment, or have the BOT_TOKEN.txt or ADMIN_ID.txt file in /etc/secrets/") from err
 
     try:
-        ADMINID = int(str(adminid).strip())
+        admin_id = int(str(admin_id).strip())
         TOKEN = str(token).strip()
     except ValueError as err:
         raise Exception("Wrong type!! Admin's ID is supposed to be the integer user ID") from err
 
     try:
-        main(token, adminid)
+        main(token, admin_id)
         print("Mainloop looped.")
         exit(0)
     except Exception as e:
