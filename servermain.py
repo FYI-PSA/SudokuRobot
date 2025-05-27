@@ -258,12 +258,12 @@ class Solver():
     def guesswork_solve(self) -> tuple:
         # if self.SOLUTIONS != []:
         if len(self.SOLUTIONS) != 0:
-            return (True, self.back_to_grid(self.SOLUTIONS[0]))
+            return (True, self.get_first_solution())
         # else:
         self.count_solve(self.grid)
         # if self.SOLUTIONS != []:
         if len(self.SOLUTIONS) != 0:
-            return (True, self.back_to_grid(self.SOLUTIONS[0]))
+            return (True, self.get_first_solution())
         # else:
         print(" im so sad, there isn't a solution! \n\n\n\n\n  I SAID IM SAD!!! DEBUG DAMN IT!!! ")
         status, result = self.OLD_GuessworkSolve(self.first_grid)
@@ -305,7 +305,7 @@ class Solver():
                             self.SOLUTIONS.add(tuple(deepcopy(expanded_answer)))
                             self.COUNT += 1
                             if self.COUNT > 100:
-                                raise TooManySolutionsException(self.back_to_grid(self.SOLUTIONS[0]))
+                                raise TooManySolutionsException(self.get_first_solution())
                 return (False, deepcopy(grid))
         expanded_answer = []
         answer = deepcopy(grid)
@@ -318,7 +318,7 @@ class Solver():
             self.SOLUTIONS.add(tuple(deepcopy(expanded_answer)))
             self.COUNT += 1
             if self.COUNT > 100:
-                raise TooManySolutionsException(self.back_to_grid(self.SOLUTIONS[0]))
+                raise TooManySolutionsException(self.get_first_solution())
         return (True, answer)
 
     def get_count(self) -> int:
@@ -330,7 +330,8 @@ class Solver():
 
     def get_first_solution(self) -> int:
         if self.COUNT == 1:
-            return self.back_to_grid(list(next(iter(self.SOLUTIONS))))
+            self.first_solution = self.back_to_grid(list(next(iter(self.SOLUTIONS))))
+            return self.first_solution
         if self.COUNT != 1:
             self.first_solution = self.OLD_GuessworkSolve(self.first_grid)[1]
             return self.first_solution
