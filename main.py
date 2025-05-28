@@ -42,7 +42,7 @@ KEY = os.path.expanduser(DIR+FILE)
 if FILE in os.listdir(LOCK):  # this is now just left purely cosmetic
     print("Turns out an instance *was* indeed already running...")
     os.remove(KEY)
-    exit(55)  # Based on Microsoft Documentation, I don't know what else to make this based off.
+    sys.exit(55)  # Based on Microsoft Documentation, I don't know what else to make this based off.
 else:
     subprocess.call(['touch', KEY])
 
@@ -264,7 +264,6 @@ async def error_handler(update, context):  # pylint: disable=W0613
         print("Conflict happening. Peace time!\n")
         time.sleep(10)
         print("Is the conflict persisting after this?\n")
-        return
     else:
         logging.info('\n\n')
         logging.error(f"An unexpected exception, you should investigate: {err}")
@@ -274,7 +273,6 @@ async def error_handler(update, context):  # pylint: disable=W0613
         else:
             print(f"Was indeed a valid exception, line {error.tb_lineno}")
         print('\n\n')
-        return
 
 
 def main(bot_token, admin_id):
@@ -336,8 +334,8 @@ if __name__ == '__main__':
     try:
         main(TOKEN, ADMIN_ID)
         print("Mainloop looped.")
-        exit(0)
+        sys.exit(0)
     except Exception as e:
         print("Generic exception? I don't know how to handle that.")
         print(e)
-        exit(1)
+        sys.exit(1)
