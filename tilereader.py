@@ -1,9 +1,7 @@
 import os
-# Tensorflow specific.
-# os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"  # more precise floating point calculations, more precise model output
-# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # disables warnings and debugging information (it's fine) but still gives errors
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"  # more precise floating point calculations, more precise model output
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # disables warnings and debugging information (it's fine) but still gives errors
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-# from tensorflow.keras import models as keras_models
 from keras import models as keras_models
 import numpy as np
 
