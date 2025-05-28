@@ -347,19 +347,18 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
     picture_dictionary = {}
     directory = 'numbers/'
     side = 0
-    border_thick = 7
-    thicker_edge = round(border_thick * 1.8)
+    border_thick = 5
+    thicker_edge = round(border_thick * 1.6)
 
     checked_side = False
     for n in range(0, 10):
         key = f'{n}.png'
         image = Image.open(directory+key)
-        image = ImageOps.expand(image, border=border_thick*4, fill='white')
-        # image = ImageOps.expand(image, border=border_thick, fill='black')
-        # image = ImageOps.expand(image, border=border_thick, fill='white')
+        # image = ImageOps.expand(image, border=border_thick*4, fill='white')
+        image = ImageOps.expand(image, border=border_thick*3, fill='white')
         # this is a cool pattern but it looks freaky so i'll remove it.
         if not checked_side:
-            side = image.width + 25
+            side = image.width + 20
             checked_side = True
         picture_dictionary.update({key: image})
 
