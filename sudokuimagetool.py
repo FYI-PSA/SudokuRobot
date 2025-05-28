@@ -44,18 +44,32 @@ def detection_blur(first_thresh: np.ndarray, blur_mode: int) -> np.ndarray:
         case 0:
             blurred = cv2.GaussianBlur(first_thresh, (1, 1), 0)
         case 1:
-            blurred = cv2.GaussianBlur(first_thresh, (3, 3), 1)
+            blurred = cv2.GaussianBlur(first_thresh, (3, 3), 0)
         case 2:
-            blurred = cv2.GaussianBlur(first_thresh, (5, 5), 3)
+            blurred = cv2.GaussianBlur(first_thresh, (5, 5), 0)
         case 3:
-            blurred = cv2.GaussianBlur(first_thresh, (7, 7), 8)
-        case 4:
-            blurred = cv2.GaussianBlur(first_thresh, (9, 9), 9)
-        case 5:
-            blurred = cv2.GaussianBlur(first_thresh, (3, 3), 2)
-        case 6:
             blurred = cv2.GaussianBlur(first_thresh, (1, 1), 1)
+        case 4:
+            blurred = cv2.GaussianBlur(first_thresh, (3, 3), 3)
+        case 5:
+            blurred = cv2.GaussianBlur(first_thresh, (5, 5), 5)
+        case 6:
+            blurred = cv2.GaussianBlur(first_thresh, (7, 7), 7)
         case 7:
+            blurred = cv2.GaussianBlur(first_thresh, (9, 9), 9)
+        case 8:
+            blurred = cv2.GaussianBlur(first_thresh, (5, 5), 3)
+        case 9:
+            blurred = cv2.GaussianBlur(first_thresh, (3, 3), 7)
+        case 10:
+            blurred = cv2.GaussianBlur(first_thresh, (1, 1), 3)
+        case 11:
+            blurred = cv2.GaussianBlur(first_thresh, (3, 3), 5)
+        case 12:
+            blurred = cv2.GaussianBlur(first_thresh, (3, 3), 1)
+        case 13:
+            blurred = cv2.GaussianBlur(first_thresh, (5, 5), 1)
+        case 14:
             blurred = deepcopy(first_thresh)
         case _:
             raise NoMoreBlurException("No more blur modes to test.")
@@ -152,7 +166,9 @@ def largest_square_bounding_from_list_of_rectangles(rectangles: list, debug: boo
         h = r[3]
         # if w > 0.9*h and w < 1.1*h:  # 10% is too much, changing it to only 7%
         # if (w > (0.93*h)) and (w < (1.07*h)):
-        if w > 0.9*h and w < 1.1*h:  # i felt like 7% is too little.
+        # if w > 0.9*h and w < 1.1*h:  # I felt like 7% is too little.
+        # if w > 0.85*h and w < 1.15*h:  # I think up to 15% will be okay
+        if 1.15*h > w > 0.85*h:  # does this work? I have no clue.
             squares.append(r)
     if squares == []:
         raise BadImageException("Your image didn't have any shapes almost resembling a square or a grid.\nThis could be an issue of too-similarly colored edges on the boxes, or a low quality image.")
@@ -168,7 +184,8 @@ def ensure_square_boundary(semisquare_boundary: tuple) -> Tuple[int, int, int, i
     delta = abs(w-h)
     ratio = max([delta/w, delta/h])
     if ratio < 0.1:  # this is just in case a rectangle gets passed to it for some reason
-        w = int((((3*w)+h)/4))
+        # w = int((((3*w)+h)/4))
+        w = int((((w+h)/2)))
         h = w
     else:
         print("NOT A SQUARE?! BLASPHEMY!")
