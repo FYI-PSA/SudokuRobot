@@ -1,5 +1,8 @@
-extension-pkg-allow-list=cv2, numpy
-extension-pkg-whitelist=cv2, numpy
+[MASTER]
+extension-pkg-whitelist=opencv-python, cv2, numpy
+extension-pkg-allow-list=opencv-python, cv2, numpy
+generated-members=cv2.*
+# generated-members=cv2.*, numpy.*
 [FORMAT]
 max-line-length=500
 [MESSAGES CONTROL]

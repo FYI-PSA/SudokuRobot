@@ -83,14 +83,18 @@ class TooManySolutionsException(SolutionsNotUniqueException):
     pass
 
 
-global EMPTYGRID
+global EMPTYGRID  # pylint: disable=W0604
 EMPTYGRID = list([[0 for _ in range(9)] for _ in range(9)])
+
+
+def back_to_grid(grid_list) -> list:
+    return [grid_list[i:i+9] for i in range(0, 81, 9)]
 
 
 class Solver():
     # TODO:
-    # Some day change the normal nested list to numpy array/matrices
-    # - Be careful of the return values, make sure if returning to other files/modules it uses the normal list again as that doesn't do calculations.
+    #   - Some day change the normal nested list to numpy array/matrices
+    #   - Be careful of the return values, make sure if returning to other files/modules it uses the normal list again as that doesn't do calculations.
 
     def __init__(self, grid: list):
         # global EMPTYGRID
@@ -252,9 +256,6 @@ class Solver():
         # return (check_valid_grid(grid), deepcopy(grid))
         return (True, deepcopy(grid))
 
-    def back_to_grid(self, grid_list) -> list:
-        return [grid_list[i:i+9] for i in range(0, 81, 9)]
-
     def guesswork_solve(self) -> tuple:
         # if self.SOLUTIONS != []:
         if len(self.SOLUTIONS) != 0:
@@ -330,7 +331,7 @@ class Solver():
 
     def get_first_solution(self) -> int:
         if self.COUNT == 1:
-            self.first_solution = self.back_to_grid(list(next(iter(self.SOLUTIONS))))
+            self.first_solution = back_to_grid(list(next(iter(self.SOLUTIONS))))
             return self.first_solution
         if self.COUNT != 1:
             self.first_solution = self.OLD_GuessworkSolve(self.first_grid)[1]
@@ -351,25 +352,66 @@ class Solver():
                     if item_ == 0:
                         continue
                     box_neigh.append(item_)
+
             if row_neigh != []:
                 current_row = Counter(row_neigh)
-                if current_row[max(current_row, key=lambda k: current_row[k])] > 1:
+                # if current_row[max(current_row, key=lambda k: current_row[k])] > 1:
+                if any([(current_row_count > 1) for current_row_count in current_row.values()]):
                     return False
             if col_neigh != []:
                 current_col = Counter(col_neigh)
-                if current_col[max(current_col, key=lambda k: current_col[k])] > 1:
+                # if current_col[max(current_col, key=lambda k: current_col[k])] > 1:
+                if any([(current_col_count > 1) for current_col_count in current_col.values()]):
                     return False
             if box_neigh != []:
                 current_box = Counter(box_neigh)
-                if current_box[max(current_box, key=lambda k: current_box[k])] > 1:
+                # if current_box[max(current_box, key=lambda k: current_box[k])] > 1:
+                if any([(current_box_count > 1) for current_box_count in current_box.values()]):
                     return False
         return True
 
-    def generate_puzzle(self) -> list:
-        grid = deepcopy(EMPTYGRID)
-        indices = np.arange(0, 81, 1)
-        np.random.shuffle(indices)
-        return grid
+
+def generate_puzzle() -> list:
+    # get a solver object in here
+    # fill in the diagonal randomly (and more later)
+    # generate_count_of_solutions, or don't, I think it's mathematically calculable if it's just the diagonal. save as magic number.
+    # generate all solutions with the solver object
+    # randomly choose one.
+    # then continue with this:
+
+    grid = deepcopy(EMPTYGRID)
+    flat_grid = []
+    for row in grid:
+        flat_grid.extend(row)
+
+    indices = np.arange(0, 81, 1)
+    np.random.shuffle(indices)
+
+    cond = True
+    middle = 81 // 2
+    count = 1
+    while cond:
+        given_indices = indices[:middle+1]
+        new_grid = [item if index in given_indices else 0 for index, item in enumerate(flat_grid)]
+        tester = Solver(back_to_grid(new_grid))
+        count = tester.get_count()
+        middle = middle // 2
+        if count != 1:
+            cond = False
+        del tester
+        del new_grid
+    while count > 1:
+        given_indices = indices[:middle+1]
+        new_grid = [item if index in given_indices else 0 for index, item in enumerate(flat_grid)]
+        tester = Solver(back_to_grid(new_grid))
+        count = tester.get_count()
+        middle += 1
+
+    middle -= 1
+    given_indices = indices[:middle+1]
+    new_grid = back_to_grid([item if index in given_indices else 0 for index, item in enumerate(flat_grid)])
+
+    return new_grid
 
 
 def read_grid_picture_to_grid(keras_model, filename, grayscale_numpy_tiles_list_to_predicted_integer_list) -> list:

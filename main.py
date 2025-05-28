@@ -89,7 +89,7 @@ def bind_port():
     return sock
 
 
-global stop_listening
+global stop_listening  # pylint: disable=W0604
 stop_listening = False  # pylint: disable=C0103
 
 
@@ -172,18 +172,20 @@ async def process_image(update, context):
     img_file_name = str(img_file_name)
     print(f"Saved the file as {img_file_name}")
     response_tuple = servermain.servermain(
-         ai_model=AImodel,
-         filename=img_file_name,
-         predict_grayscale_func=predict_grayscale_func
+        ai_model=AImodel,
+        filename=img_file_name,
+        predict_grayscale_func=predict_grayscale_func
     )
     print(response_tuple)
-    (success,
-     solved_grid_file_name,
-     solved_image_file_name,
-     solved_grid,
-     possible_err_details,
-     possible_err_name,
-     possible_err_line) = response_tuple
+    (
+        success,
+        solved_grid_file_name,
+        solved_image_file_name,
+        solved_grid,
+        possible_err_details,
+        possible_err_name,
+        possible_err_line
+        ) = response_tuple
 
     print("Yay! The heart beat and did its thing!")
     too_many_solutions_flag = False
@@ -311,25 +313,28 @@ def main(bot_token, admin_id):
 
 if __name__ == '__main__':
     try:
-        token = os.getenv('BOT_TOKEN')  # github secrets
-        admin_id = os.getenv('ADMIN_ID')
-        if token is None:
+        _token = os.getenv('BOT_TOKEN')  # github secrets
+        _admin_id = os.getenv('ADMIN_ID')
+        if _token is None:
             with open('/etc/secrets/BOT_TOKEN.txt', 'rb') as file:  # render secrets
-                token = file.read().decode('utf-8').strip()
-        if admin_id is None:
+                _token = file.read().decode('utf-8').strip()
+        if _admin_id is None:
             with open('/etc/secrets/ADMIN_ID.txt', 'rb') as file:  # this one is less secret and more to avoid hard coding
-                admin_id = file.read().decode('utf-8').strip()
+                _admin_id = file.read().decode('utf-8').strip()
     except (PermissionError, UnicodeDecodeError) as err:
         raise Exception("Token or Admin's ID not found. Either set BOT_TOKEN / ADMIN_ID in environment, or have the BOT_TOKEN.txt or ADMIN_ID.txt file in /etc/secrets/") from err
 
     try:
-        admin_id = int(str(admin_id).strip())
-        TOKEN = str(token).strip()
+        ADMIN_ID = int(str(_admin_id).strip())
+        TOKEN = str(_token).strip()
     except ValueError as err:
         raise Exception("Wrong type!! Admin's ID is supposed to be the integer user ID") from err
 
+    del _token
+    del _admin_id
+
     try:
-        main(token, admin_id)
+        main(TOKEN, ADMIN_ID)
         print("Mainloop looped.")
         exit(0)
     except Exception as e:

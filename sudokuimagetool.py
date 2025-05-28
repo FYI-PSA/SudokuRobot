@@ -77,6 +77,9 @@ def rgb_image_to_inverse_thresholded_grayscale(rgb_image: np.ndarray, purpose: s
     # otsu's method find a midrange average by averaging the most and the least (+ other math opts probably)
     # the inv_binary_threshold just makes a black and white image with black in the background to threshold at 50% with white in the background instead
 
+    if debug:
+        print(f'first threshold: {threshold}')
+
     if purpose == 'detect':
         blurred = detection_blur(first_thresh, blur_mode)
     else:
@@ -84,6 +87,9 @@ def rgb_image_to_inverse_thresholded_grayscale(rgb_image: np.ndarray, purpose: s
 
     # threshold, second_thresh = cv2.threshold(first_thresh, 0.0, 255.0, cv2.THRESH_BINARY + cv2.THRESH_OTSU)  # I have 0 clue why I made it blurred just to not use it?? I need to use blur, sometimes I'm stupid.
     threshold, second_thresh = cv2.threshold(blurred, 0.0, 255.0, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    if debug:
+        print(f'second threshold: {threshold}')
 
     # make sure it's actually an inverted mostly-black black-and-white image:
     if np.average(second_thresh) > (255.0/2.1):
@@ -122,14 +128,15 @@ def rectangle_contours_from_inverse_thresholded_image(thresholded_img: np.ndarra
         # if (w*h) > 4096:  # larger area than a 64 x 64 square
         if (w*h) > 8192:  # larger area than a roughly 90 x 90 square
             # needs to be large enough to filter out to compensate for all of the contours found.
-            rectangles.append(cv2.boundingRect(c))
+            # rectangles.append(cv2.boundingRect(c))
+            rectangles.append((x, y, w, h))
             if debug:
                 print(f'New rectangle: {[i for i in rectangles[-1]]}')
 
     return rectangles
 
 
-class bad_imageException(Exception):
+class BadImageException(Exception):
     pass
 
 
@@ -148,7 +155,7 @@ def largest_square_bounding_from_list_of_rectangles(rectangles: list, debug: boo
         if w > 0.9*h and w < 1.1*h:  # i felt like 7% is too little.
             squares.append(r)
     if squares == []:
-        raise bad_imageException("Your image didn't have any shapes almost resembling a square or a grid.\nThis could be an issue of too-similarly colored edges on the boxes, or a low quality image.")
+        raise BadImageException("Your image didn't have any shapes almost resembling a square or a grid.\nThis could be an issue of too-similarly colored edges on the boxes, or a low quality image.")
     largest_square = max(squares, key=lambda s: s[2])
     if debug:
         x, y, w, h = largest_square
@@ -194,7 +201,8 @@ def debug_draw_mask_to_original_image(mask: np.ndarray, rgb_original_img: np.nda
 
 def extract_square_boundary_to_image(square_bounding: tuple, rgb_original_img: np.ndarray) -> Image.Image:
     x, y, w, h = square_bounding
-    square = np.asarray(rgb_original_img, dtype=np.uint8)[y:y+h, x:x+h]
+    # square = np.asarray(rgb_original_img, dtype=np.uint8)[y:y+h, x:x+h]
+    square = np.asarray(rgb_original_img, dtype=np.uint8)[y:y+h, x:x+w]
     square = Image.fromarray(square)
     return square
 
@@ -269,7 +277,7 @@ def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool =
 
     largest_square = (0, 0, 0, 0)
     largest_square_image = np.ndarray([], dtype=np.uint8)
-    # largest_square_rectangles = []
+    largest_square_rectangles = []
     largest_square_mode = -1
     while not finish:
         try:
@@ -281,14 +289,15 @@ def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool =
                 most_rectangles = deepcopy(rectangle_boxes)
                 best_mode = deepcopy(blurmode)
             square_image, square_properties = rectangles_to_square_image(rectangle_boxes, rgb_image, debug=more_debug)
-            x, y, w, h = square_properties
+            # x, y, w, h = square_properties
+            w, h = square_properties[2:4]
             if w > largest_square[2] and (h == w):
                 largest_square = deepcopy(square_properties)
                 largest_square_image = deepcopy(square_image)
                 largest_square_rectangles = deepcopy(rectangle_boxes)
                 largest_square_mode = deepcopy(blurmode)
             success = True
-        except bad_imageException:
+        except BadImageException:
             if debug:
                 print(f"Blur mode {blurmode} failed. Trying another.")
         except NoMoreBlurException:
@@ -303,7 +312,7 @@ def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool =
         if debug:
             print(f"Unsuccessful. Displaying the most amount of rectangles ({most_count}) that was acquired during mode {best_mode}")
             debug_display_rectangles(most_rectangles, rgb_image)
-        raise bad_imageException("Your image didn't have any shapes almost resembling a square or a grid.\nThis could be an issue of too-similarly colored edges on the boxes, or a low quality image.")
+        raise BadImageException("Your image didn't have any shapes almost resembling a square or a grid.\nThis could be an issue of too-similarly colored edges on the boxes, or a low quality image.")
 
     if debug:
         print(f"At least one grid was recognised using blur mode(s) {largest_square_mode} and {best_mode}! Woo hoo!")
@@ -336,7 +345,7 @@ def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool =
 # This is both slow and ugly.
 def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image.Image:
     picture_dictionary = {}
-    DIRECTORY = 'numbers/'
+    directory = 'numbers/'
     side = 0
     border_thick = 7
     thicker_edge = round(border_thick * 1.8)
@@ -344,7 +353,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
     checked_side = False
     for n in range(0, 10):
         key = f'{n}.png'
-        image = Image.open(DIRECTORY+key)
+        image = Image.open(directory+key)
         image = ImageOps.expand(image, border=border_thick*4, fill='white')
         # image = ImageOps.expand(image, border=border_thick, fill='black')
         # image = ImageOps.expand(image, border=border_thick, fill='white')
@@ -443,14 +452,14 @@ def write_solved_grid_to_image(new_file_name: str, filename: str, tile_list: lis
                 # most_rectangles = deepcopy(rectangle_boxes)
                 # most_mode = blurmode
             square_image, square_properties = rectangles_to_square_image(rectangle_boxes, rgb_image)
-            x, y, w, h = square_properties
+            w = square_properties[2]
             if w > largest_square[2]:
                 largest_square = deepcopy(square_properties)
                 largest_square_image = deepcopy(square_image)
                 # largest_square_rectangles = deepcopy(rectangle_boxes)
                 # largest_square_mode = deepcopy(blurmode)
             success = True
-        except bad_imageException:
+        except BadImageException:
             pass
         except NoMoreBlurException:
             blurmode -= 1
@@ -459,7 +468,7 @@ def write_solved_grid_to_image(new_file_name: str, filename: str, tile_list: lis
             blurmode += 1
     gc.collect()
     if not success:
-        raise bad_imageException("Your image didn't have any shapes almost resembling a square or a grid.\nThis could be an issue of too-similarly colored edges on the boxes, or a low quality image.")
+        raise BadImageException("Your image didn't have any shapes almost resembling a square or a grid.\nThis could be an issue of too-similarly colored edges on the boxes, or a low quality image.")
     grid = largest_square_image
     mostly_black = False
     if np.average(grid) < (255.0/2.1):
