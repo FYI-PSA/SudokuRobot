@@ -20,7 +20,8 @@ def grayscale_numpy_tiles_list_to_predicted_integer_list(model: keras_models.Mod
     # seems to work without it
     # I will still keep this line of code in case something breaks.
     # tile_arr_data = np.expand_dims(tile_arr_data, axis=-1)
-    predictions = model.predict(tile_arr_data, verbose=0)
+    # predictions = model.predict(tile_arr_data, verbose=0)
+    predictions = model.predict(tile_arr_data, verbose=2)  # type: ignore
     predicted_classes = np.argmax(predictions, axis=1)
     predicted_classes_normal = [int(n) for n in predicted_classes]  # The return value should be a list of ints, not a np array of np.int64
     # print(tile_arr_data.shape)

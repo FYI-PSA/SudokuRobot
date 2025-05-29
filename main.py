@@ -306,7 +306,7 @@ def main(bot_token, admin_id):
     print("Mainloooop... died... sigterm...")
     stop_listening = True
     sock_listener_thread.join()
-    return
+    # return
 
 
 if __name__ == '__main__':

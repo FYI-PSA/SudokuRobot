@@ -6,5 +6,8 @@
             "addWords": true,
             "scope": "workspace"
         }
-    }
+    },
+    /* "python.jediMemoryLimit": 4096, */
+    /* "python.languageServer": "Jedi", */
+    /* "python.analysis.languageServerMode": "full" */
 }
