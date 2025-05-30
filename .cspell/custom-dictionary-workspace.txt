@@ -13,6 +13,7 @@ gridprint
 gridstr
 gridstring
 imshow
+imwrite
 keras
 lanczos
 levelname

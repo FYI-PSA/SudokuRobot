@@ -10,5 +10,6 @@ disable=W0602, W0603, W0622, W0718, W0719, W1203, C0114, C0115, C0116, C0325, C0
 [DESIGN]
 max-locals=25
 max-statements=100
+max-returns=10
 max-branches=20
 max-nested-block=8

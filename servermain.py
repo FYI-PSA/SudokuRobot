@@ -5,16 +5,20 @@ import time
 from collections import Counter
 import sudokuimagetool
 
+from typing import List, Tuple
+
 import numpy as np
 
 import gc
-import ast
 
-import logging
-# print = logging.info
+if os.name != "nt":
+    # When on Linux => Os.name not "nt" => Switch to logging instead of printing, particularly for deploying to servers.
+    # When on Windows => Os.name = "nt" => Only print
+    import logging
+    print = logging.info
 
 
-def get_file_name_info(fname: str) -> tuple:
+def get_file_name_info(fname: str) -> Tuple[str, str]:
     filename = str(fname)
     splitname = filename.split('.')
     ext = splitname[-1]
@@ -59,7 +63,6 @@ def break_down_to_set(small_list_or_str):
         input = str(small_list_or_str).strip().lower()
     else:
         input = small_list_or_str
-    # if input == '' or input == []:
     if input in ('', []):
         return larger_set
     for _ in input:
@@ -77,20 +80,21 @@ def break_down_to_set(small_list_or_str):
     return larger_set
 
 
-class SolutionsNotUniqueException(Exception):
-    pass
-
-
-class TooManySolutionsException(SolutionsNotUniqueException):
-    pass
-
-
 global EMPTYGRID  # pylint: disable=W0604
 EMPTYGRID = [[0 for _ in range(9)] for _ in range(9)]
 
 
-def back_to_grid(grid_list: list) -> list:
-    return [grid_list[i:i+9] for i in range(0, 81, 9)]
+def grid_to_list(grid: List[List[int]]) -> List[int]:
+    result = []
+    for row in grid:
+        result.extend(row)
+    return result
+
+
+def back_to_grid(grid_list: List[int] | np.ndarray) -> List[List[int]]:
+    grid_list_ = list(map(int, np.asarray(grid_list, dtype=np.uint8)))
+    # ensure that no matter what it is it gets turned into a python list of python ints
+    return [grid_list_[i:i+9] for i in range(0, 81, 9)]
 
 
 def grid_list_to_np(grid_list) -> np.ndarray:
@@ -98,39 +102,18 @@ def grid_list_to_np(grid_list) -> np.ndarray:
 
 
 class Solver():
-    """Methods: guesswork_solve, get_count, get_first_solution, ...
-
-    Raises:
-        TooManySolutionsException: A subclass of SolutionNotUniqueException
-
-    Returns:
-        _type_: _description_
-    """
-    #   TODO:
-    #   - Not sure if this will work, I tried enough but I don't think it would change a lot:
-    #   - Some day change the normal nested list to numpy array/matrices
-    #   - Be careful of the return values, make sure if returning to other files/modules it uses the normal list again as that doesn't do calculations.
-
     def __init__(self, grid: list):
-        # global EMPTYGRID
-        # CONSTANTS
         self.ALL = set(range(1, 10))  # pylint: disable=C0103
         self.CHECK_CELLS = [(0, 0), (1, 3), (2, 6), (3, 1), (4, 4), (5, 7), (6, 2), (7, 5), (8, 8)]  # pylint: disable=C0103
         # Definitely mathematically redundant and can be reduced.
         # I don't want to do that though, too lazy. Deal with it, it's not slow enough to care about.
-        # self.GRID = deepcopy(EMPTYGRID)  # pylint: disable=C0103
-        # self.SOLUTIONS = []  # pylint: disable=C0103
         self.SOLUTIONS = set()  # pylint: disable=C0103
         self.COUNT = 0  # pylint: disable=C0103
-        self.GRID = deepcopy(grid)
+        self.GRID = deepcopy(grid)  # pylint: disable=C0103
         self.first_grid = deepcopy(self.GRID)
         self.first_solution = deepcopy(self.GRID)
-        # self.GRID = grid_list_to_np(grid)
-        # self.first_grid = np.array(self.GRID)
-        # self.first_solution = np.array(self.GRID)
-        # for whatever reason np.array makes its own sub-objects so it's technically a deepcopy
 
-    def solve_by_grid(self, input_grid) -> tuple:
+    def solve_by_grid(self, input_grid) -> Tuple[List[List[int]], List[List[int]]]:
         # takes a base grid and tries to solve for lonely items. returns a candidate-filled kinda-solved grid and the normal kinda-solved grid
         grid = deepcopy(input_grid)
         candid = deepcopy(grid)
@@ -158,7 +141,7 @@ class Solver():
                         candid[i][j] = '-'.join([str(i) for i in iter(possible)])
         return (candid, grid)
 
-    def solve_by_candid(self, input_candids, input_grid) -> list:
+    def solve_by_candid(self, input_candids, input_grid) -> List[List[int]]:
         # takes a candidate-containing grid and the normal grid and tries to solve based on being the only candidate for a number in a set. returns a kinda-solved normal grid
         candid = deepcopy(input_candids)
         grid = deepcopy(input_grid)
@@ -195,7 +178,7 @@ class Solver():
                         grid[i][j] = next(iter(r_b))
         return grid
 
-    def simple_solve(self, input_grid) -> tuple:
+    def simple_solve(self, input_grid) -> Tuple[List[List[int]], List[List[int]]]:
         # takes a normal unsolved grid, and tries to solve it using the two functions above. returns a potentially candidate-containing grid and a potentially solved grid.
         grid = deepcopy(input_grid)
         candid = deepcopy(grid)
@@ -228,7 +211,7 @@ class Solver():
     #     2.if a number can only be in once space of a row/column/box, then that tile becomes the number it can only be there.
     # then applying a brute force technique to any unsolved tiles and then trying itself again.
     # takes an unsolved grid as input and returns a boolean for it was solvable alongside a hopefully solved grid.
-    def OLD_GuessworkSolve(self, grid_base, debug=False) -> tuple:  # pylint: disable=C0103
+    def OLD_GuessworkSolve(self, grid_base, debug=False) -> Tuple[bool, List[List[int]]]:  # pylint: disable=C0103
         candid, grid = self.simple_solve(grid_base)
         if not self.check_valid_grid(grid):
             return (False, grid)
@@ -270,116 +253,89 @@ class Solver():
                     print(colored("[#] Assuming failure.", "magenta"))
                 return (False, deepcopy(grid))
         # by this point:
-        # the grid must already be solved, not be wrong, not have any emptiness if it's not returned yet.
-        # so it'll always return True on check_valid_grid because of the first few lines of this function doing that.
-        # return (check_valid_grid(grid), deepcopy(grid))
+        # the grid must already be solved, not be wrong, not have any emptiness
+        # so it'll always return True on check_valid_grid
         return (True, deepcopy(grid))
 
-    def guesswork_solve(self) -> tuple:
-        # if self.SOLUTIONS != []:
-        if len(self.SOLUTIONS) != 0:
-            return (True, self.get_first_solution())
-        # else:
-        self.count_solve(self.GRID)
-        # if self.SOLUTIONS != []:
-        if len(self.SOLUTIONS) != 0:
-            return (True, self.get_first_solution())
-        # else:
-        print(" im so sad, there isn't a solution! \n\n\n\n\n  I SAID IM SAD!!! DEBUG DAMN IT!!! ")
-        status, result = self.OLD_GuessworkSolve(self.first_grid)
-        # print(f'{status}, {result}')  # Can't forget that print is logging.info and that only takes 1 argument
-        return (status, result)
-
-    def count_solve(self, input_grid) -> tuple:
-        candid, grid = self.simple_solve(input_grid)
+    def brute_all_solves(self, grid_base) -> List[List[int]]:
+        candid, grid = self.simple_solve(grid_base)
         if not self.check_valid_grid(grid):
-            return (False, grid)
+            return (grid)
+
         for i, row in enumerate(grid):
             for j, item in enumerate(row):
                 if item != 0:
                     continue
+
                 candidate_string = candid[i][j]
-                if not isinstance(candidate_string, str):
-                    return (False, deepcopy(grid))
+                if not isinstance(candidate_string, str):  # Means it's an int and is 0 for empty
+                    return (deepcopy(grid))
                 candidates = break_down_to_set(candidate_string)
-                # for r_ in candid:
-                # for j_ in r_:
-                # if j_ == 0:
-                # for j_ in [r_ for r_ in candid]:
-                # for item in [item for row in grid for item in row]:
-                # if j_ == 0:
-                if any((item == 0) for item in [item for row in grid for item in row]):
-                    return (False, deepcopy(grid))
+                for r_ in candid:
+                    for j_ in r_:
+                        if j_ == 0:
+                            return (deepcopy(grid))
+
                 candidates = list(candidates)
                 candidates.sort()
+
                 for p in candidates:
-                    test_grid = []
                     test_grid = deepcopy(grid)
                     test_grid[i][j] = p
-                    could_be_solved, answer = self.count_solve(test_grid)
-                    if could_be_solved and self.check_valid_grid(answer):
-                        # return (True, answer)
-                        expanded_answer = []
-                        for row in answer:
-                            expanded_answer.extend(row)
-                        # if not (expanded_answer in self.SOLUTIONS):
-                        # if expanded_answer not in self.SOLUTIONS:
-                        if tuple(expanded_answer) not in self.SOLUTIONS:
-                            # self.SOLUTIONS.append(deepcopy(expanded_answer))
-                            self.SOLUTIONS.add(tuple(deepcopy(expanded_answer)))
-                            self.COUNT += 1
-                            if self.COUNT > 100:
-                                raise TooManySolutionsException(self.get_first_solution())
-                return (False, deepcopy(grid))
-        expanded_answer = []
-        answer = deepcopy(grid)
-        for row in answer:
-            expanded_answer.extend(row)
-        # if not (expanded_answer in self.SOLUTIONS):
-        # if expanded_answer not in self.SOLUTIONS:
-        if tuple(expanded_answer) not in self.SOLUTIONS:
-            # self.SOLUTIONS.append(deepcopy(expanded_answer))
-            self.SOLUTIONS.add(tuple(deepcopy(expanded_answer)))
-            self.COUNT += 1
-            if self.COUNT > 100:
-                raise TooManySolutionsException(self.get_first_solution())
-        return (True, answer)
+                    answer = self.brute_all_solves(test_grid)
+                    if self.COUNT > 100:
+                        return (answer)
+                    if self.check_valid_grid(answer) and self.check_is_solved(answer):
+                        answer_tuple = tuple(grid_to_list(answer))
+                        if answer_tuple not in self.SOLUTIONS:
+                            self.SOLUTIONS.add(deepcopy(answer_tuple))
+                            self.COUNT = self.COUNT + 1
+                        if self.COUNT == 1:
+                            self.first_solution = answer
+                        del answer_tuple
+                    del test_grid
 
-    def get_count(self) -> int:
+                return (deepcopy(grid))
+        # reaching this point, grid is full.
+        answer = grid
+        if self.COUNT > 100:
+            return (answer)
+        if self.check_valid_grid(answer) and self.check_is_solved(answer):
+            answer_tuple = tuple(grid_to_list(answer))
+            if answer_tuple not in self.SOLUTIONS:
+                self.SOLUTIONS.add(deepcopy(answer_tuple))
+                self.COUNT = self.COUNT + 1
+            if self.COUNT == 1:
+                self.first_solution = answer
+        return (grid)
+
+    def count_and_solve(self) -> Tuple[bool, int, List[List[int]]]:
+        if self.check_is_solved(self.GRID):
+            return (True, self.COUNT, self.first_solution)
+        self.brute_all_solves(deepcopy(self.first_grid))
+        self.GRID = deepcopy(self.first_solution)
+        if (not self.check_is_solved(self.GRID)) and (self.COUNT > 0):
+            raise BadInspectionException("I somehow messed up.")
+        status = False
         if self.COUNT > 0:
-            return self.COUNT
-        truth, res = self.OLD_GuessworkSolve(self.GRID)
-        ans = []
-        for row in res:
-            ans.extend(row)
-        if truth and self.COUNT < 1:
-            self.COUNT = 1
-            self.SOLUTIONS.add(tuple(ans))
-        return self.COUNT
+            status = True
+        return (status, self.COUNT, self.first_solution)
 
-    def get_first_solution(self) -> list:
-        if self.COUNT == 1:
-            self.first_solution = back_to_grid(list(next(iter(self.SOLUTIONS))))
-            return self.first_solution
-        truth, res = self.OLD_GuessworkSolve(self.GRID)
-        ans = []
-        for row in res:
-            ans.extend(row)
-        if truth and self.COUNT < 1:
-            self.COUNT = 1
-            self.SOLUTIONS.add(tuple(ans))
-        self.first_solution = res
-        return self.first_solution
-
-    def get_solution_from_index(self, index: int) -> list:
+    def get_solution_from_index(self, index: int) -> List[List[int]]:
         if self.COUNT <= index:
-            raise IndexError("Your requested index of solutions didn't exist. Generate first, and be reasonable.")
-        return back_to_grid(list(list(self.SOLUTIONS)[index]))  # WARNING: self.SOLUTIONS IS A SET, THE LIST CONVERSION WILL BE SEMI-RANDOM
+            error_message = "Your requested index of solutions didn't exist. Generate first, and be reasonable."
+            print(error_message)
+            raise IndexError(error_message)
+        return back_to_grid(list(list(self.SOLUTIONS)[index]))
+    # WARNING: self.SOLUTIONS IS A SET, THE LIST CONVERSION WILL BE SEMI-RANDOM
 
     def check_valid_grid(self, input_grid=None) -> bool:
         if input_grid is None:
             input_grid = deepcopy(self.GRID)
-        # takes a solved or an unsolved grid and checks each row and column and box only once (9 total tiles) (using some tile coordinates written in the constants) for repeating numbers. returns True if no repeats and False if the grid was solved incorrectly.
+        # takes a solved or an unsolved grid
+        # and checks each row and column and box only once for repeating numbers
+        # (9 tiles total) (using some tile coordinates in the class attributes)
+        # returns True if no repeats and False if the grid was solved incorrectly.
         for i, j in self.CHECK_CELLS:
             row = input_grid[i]
             # item = row[j]
@@ -393,33 +349,33 @@ class Solver():
                     if item_ == 0:
                         continue
                     box_neigh.append(item_)
-
             if row_neigh != []:
                 current_row = Counter(row_neigh)
-                # if current_row[max(current_row, key=lambda k: current_row[k])] > 1:
-                # if any([(current_row_count > 1) for current_row_count in current_row.values()]):
                 if any((current_row_count > 1) for current_row_count in current_row.values()):
                     return False
             if col_neigh != []:
                 current_col = Counter(col_neigh)
-                # if current_col[max(current_col, key=lambda k: current_col[k])] > 1:
-                # if any([(current_col_count > 1) for current_col_count in current_col.values()]):
                 if any((current_col_count > 1) for current_col_count in current_col.values()):
                     return False
             if box_neigh != []:
                 current_box = Counter(box_neigh)
-                # if current_box[max(current_box, key=lambda k: current_box[k])] > 1:
-                # if any([(current_box_count > 1) for current_box_count in current_box.values()]):
                 if any((current_box_count > 1) for current_box_count in current_box.values()):
                     return False
         return True
+
+    def check_is_solved(self, grid_input: List[List[int]]) -> bool:
+        for row in grid_input:
+            for item in row:
+                if item == 0:
+                    return False
+        return self.check_valid_grid(grid_input)
 
 
 class BadInspectionException(Exception):
     pass
 
 
-def generate_puzzle(diff: int = 0) -> list:
+def generate_puzzle(diff: int = 0) -> List[List[int]]:
     """Makes a Sudoku puzzle grid based on the difficulty provided
 
     Args:
@@ -446,10 +402,8 @@ def generate_puzzle(diff: int = 0) -> list:
             random = random * 0.9
             random = int(np.ceil(random * 100) // 10)
             base_flat[10*i] = random
-        # gridprint(back_to_grid(base_flat))
         works = Solver(back_to_grid(base_flat)).check_valid_grid()
     base_scramble = (flat_grid if base_flat is None else base_flat)
-    # gridprint(back_to_grid(base_scramble))
 
     test_base_scramble = None
     works = False
@@ -459,31 +413,26 @@ def generate_puzzle(diff: int = 0) -> list:
             random = 1.0 - np.random.rand()
             random = random * 0.9
             random = int(np.ceil(random * 100) // 10)
-            test_base_scramble[8*(i+1)] = random  # These aren't magic numbers they're just the indexes of the main diagonals
-        # gridprint(back_to_grid(test_base_scramble))
+            test_base_scramble[8*(i+1)] = random
+            # 8*(i+1) and 10*(i) values are magic numbers that give the indices of the main diagonals with i
         works = Solver(back_to_grid(test_base_scramble)).check_valid_grid()
     scrambled_diagonals = (base_scramble if test_base_scramble is None else test_base_scramble)
     grid_scrambled = back_to_grid(scrambled_diagonals)
-    gridprint(grid_scrambled)
 
     solve_it = Solver(grid_scrambled)
     try:
-        possible, _first_solved = solve_it.guesswork_solve()
+        possible, count, _ = solve_it.count_and_solve()
         if not possible:
             raise BadInspectionException("How in the hell did this thing pass inspection?")
     except BadInspectionException as e:
-        print(e)
-        return []
-    except (TooManySolutionsException, SolutionsNotUniqueException):
-        possible = True
-        # _first_solved = solve_it.get_first_solution()
+        print(f"The code failed due to bad inspection: {e}")
+        return EMPTYGRID
     except Exception as e:
-        print("this wasn't planned, but you know where it is now.")
+        print("Generic exception while generating puzzle? That's strange.")
         raise e
 
-    count = solve_it.get_count()
-    # print(count)
     assert (count > 0)  # otherwise the above exception would be raised
+    # asserting this in case I miscalculated something in my algorithm
 
     random = np.random.rand()
     random = int(np.floor(random*100*count) / 100)
@@ -492,16 +441,15 @@ def generate_puzzle(diff: int = 0) -> list:
         print('Random is choosing incorrectly?')
         random = random % count
 
-    print(f'out of {count} possible, {random} was chosen.')
+    print(f"Out of {count} possible grids, #{random} was chosen.")
 
     full_grid = solve_it.get_solution_from_index(random)
 
-    gridprint(full_grid)
-    # return
-    # a lot of shit in the solver method is broken
-
     indices = np.arange(0, 81, 1)
     np.random.shuffle(indices)
+    np.random.shuffle(indices)
+    np.random.shuffle(indices)
+    # Three time's the charm!
 
     solved_grid = []
     for r in full_grid:
@@ -513,15 +461,10 @@ def generate_puzzle(diff: int = 0) -> list:
     while cond:
         given_indices = indices[:middle+1]
         new_grid = back_to_grid([item if (index in given_indices) else 0 for index, item in enumerate(solved_grid)])
-        # gridprint(new_grid)
         tester = Solver(new_grid)
-        tester.guesswork_solve()
-        count = tester.get_count()
-        # SOMETHING IS FUCKED
-        return -10000
+        possible, count, _ = tester.count_and_solve()
         middle = middle // 2
-        print(middle)
-        if count != 1:
+        if count != 1 or middle == 0:
             cond = False
         del tester
         del new_grid
@@ -529,10 +472,10 @@ def generate_puzzle(diff: int = 0) -> list:
         given_indices = indices[:middle+1]
         new_grid = back_to_grid([item if index in given_indices else 0 for index, item in enumerate(solved_grid)])
         tester = Solver(new_grid)
-        count = tester.get_count()
-        middle += 1
+        possible, count, _ = tester.count_and_solve()
+        if count > 1:
+            middle += 1
 
-    middle -= 1
     middle = middle + diff
     given_indices = indices[:middle+1]
     new_grid = back_to_grid([item if index in given_indices else 0 for index, item in enumerate(solved_grid)])
@@ -540,18 +483,15 @@ def generate_puzzle(diff: int = 0) -> list:
     return new_grid
 
 
-def read_grid_picture_to_grid(keras_model, filename, grayscale_numpy_tiles_list_to_predicted_integer_list) -> list:
-    # global EMPTYGRID
+def read_grid_picture_to_grid(keras_model, filename, grayscale_numpy_tiles_list_to_predicted_integer_list) -> List[List[int]]:
     current_directory_files = [str(f) for f in os.listdir(os.getcwd())]
     if not (str(filename) in current_directory_files):
         print(colored(f"[>] The image '{filename}' isn't present in the current directory. Make sure to add it!", "magenta"))
         print(colored("[>] Returning an empty grid just for fun, while you go get your image.", "yellow"))
         print(colored("[>] No need to close the program; Just press the Enter key again and I'll process your image for you once you place it here.", "yellow"))
         raise Exception(f"Image file not found? Why? filename: {filename}, dir: {os.getcwd()}, ls: {os.listdir(os.getcwd())}")
-        # return (deepcopy(EMPTYGRID))
     tile_images = sudokuimagetool.process_image_file_to_list_of_polished_np_tiles(filename=filename)
     tiles = grayscale_numpy_tiles_list_to_predicted_integer_list(tiles=tile_images, model=keras_model)
-    # print(tiles)
     grid = [tiles[i:i + 9] for i in range(0, 81, 9)]
     return (deepcopy(grid))
 
@@ -565,7 +505,7 @@ def write_grid_to_grid_picture(tiles_list: list, og_file_name: str, solved_file_
     print("saved grid on the original image")
 
 
-def main(model, filename, predict_grayscale_func) -> tuple:
+def main(model, filename, predict_grayscale_func) -> Tuple[int, List[List[int]]]:
     # main thing with all of the main UX and styling going on. gets the time to solve, solves the grid, returns the amount of solutions and the first one.
     main_grid = read_grid_picture_to_grid(filename=filename, keras_model=model, grayscale_numpy_tiles_list_to_predicted_integer_list=predict_grayscale_func)
 
@@ -576,35 +516,31 @@ def main(model, filename, predict_grayscale_func) -> tuple:
 
     st = time.time()
 
-    # solution = Solver(deepcopy(main_grid))
-    solution = Solver(main_grid)
-    could_be_solved, main_grid = solution.guesswork_solve()
-    solutions = solution.get_count()
-    main_grid = solution.get_first_solution()
+    solution = Solver(deepcopy(main_grid))
+    could_be_solved, number_of_solutions, first_solution = solution.count_and_solve()
 
     et = time.time()
     dt = round(et - st, 4)
 
     print(colored(f"Time it took to count solutions and do the simplest solve: {dt} seconds", "magenta"))
     print(colored(f"The final grid is {'CORRECT' if could_be_solved else 'INCORRECT'}\n\n\n", "green" if could_be_solved else "red"))
-    print(colored(f"The amount of solutions is {'only one!' if (solutions == 1) else f'{solutions}!'}\n\n\n", "lightblue" if (solutions == 1) else "blue"))
+    print(colored(f"The amount of solutions is {'only one!' if (number_of_solutions == 1) else f'{number_of_solutions}!'}\n\n\n", "lightblue" if (number_of_solutions == 1) else "blue"))
 
     if not could_be_solved:
         # expand on this
         # tell the user better details, as of right now this is WAY TOO BROAD
         # use different return codes
-        return (-1, main_grid)
+        return (-1, first_solution)
 
     print("\n")
-    print(colored(f"{'The Solution' if (solutions == 1) else 'A Solution:'}:\n", "green"))
-    gridprint(main_grid)
+    print(colored(f"{'The Solution' if (number_of_solutions == 1) else 'A Solution:'}:\n", "green"))
+    gridprint(first_solution)
     print("\n")
 
-    return (solutions, main_grid)
+    return (number_of_solutions, first_solution)
 
 
-def servermain(filename, ai_model, predict_grayscale_func):
-    # global EMPTYGRID
+def servermain(filename, ai_model, predict_grayscale_func) -> Tuple[bool, str, str, List[List[int]], str | None, str | None, int | None]:
     print('entering servermain')
 
     filename = str(filename)
@@ -619,16 +555,6 @@ def servermain(filename, ai_model, predict_grayscale_func):
     try:
         count_of_solutions, returned_grid = main(model=ai_model, filename=filename, predict_grayscale_func=predict_grayscale_func)
         print("got a result")
-
-    except TooManySolutionsException as err_message:
-        print("got too many solutions")
-        count_of_solutions = 101
-        returned_grid = ast.literal_eval(str(err_message))
-        error_message = "This puzzle has at least 100 solutions!"
-        error_name = "Too many solutions"
-        last_event = sys.exc_info()[-1]
-        error_line = (-1 if last_event is None else last_event.tb_lineno)
-
     except Exception as err_message:
         print("got an error")
         print(err_message)
@@ -637,10 +563,10 @@ def servermain(filename, ai_model, predict_grayscale_func):
         print(f'error line: {error_line}')
         sys.exit(1)
         # return (False, grid_name, solved_name, deepcopy(EMPTYGRID), str(err_message), type(err_message).__name__, sys.exc_info()[-1].tb_lineno)
-        # REMOVE THIS AFTER YOU REMOVE THE EXIT(1)
+        # RETURN THIS AGAIN IF YOU REMOVE THE EXIT(1)
 
-    if count_of_solutions == -1:
-        print("got no result but no error")
+    if count_of_solutions == -1:  # it's when (could_be_solved == False)
+        print("The code progressed all the way here, but (could_be_solved) was False")
         err_message_html: str = (
             "There's an error in one of the following:\n\n"
             ""
@@ -654,11 +580,18 @@ def servermain(filename, ai_model, predict_grayscale_func):
             )
         return (False, grid_name, solved_name, returned_grid, str(err_message_html), 'CouldNotBeSolved', 309)
 
-    if 1 < count_of_solutions < 100:
-        print("got a bunch of results but less than a hundred")
+    if 1 < count_of_solutions <= 100:
+        print("got a bunch of results but it's not more than a hundred")
         error_message = "The puzzle didn't have a unique solutions"
         error_name = "Solutions not unique"
-        error_line = 400
+        error_line = 587
+
+    elif count_of_solutions > 100:
+        print("got too many solutions")
+        count_of_solutions = 101
+        error_message = "This puzzle has at least 100 solutions!"
+        error_name = "Too many solutions"
+        error_line = 594
 
     gc.collect()
     solved_tiles = []
@@ -677,11 +610,43 @@ def servermain(filename, ai_model, predict_grayscale_func):
 
     print('going home...')
     return (True, grid_name, solved_name, returned_grid, error_message, error_name, error_line)
-
-    # success, name of solved grid file, name of solved full image file, completed or not grid as the 9 in 9 list, error message, error name, error line
+    # return value:
+    # successful as a boolean, name of solved grid file as a string, name of solved full image file as a string, completed or not grid as 9 lists of 9 numbers in a list, error message as a string, error name as a string, error line as an int
 
 
 if __name__ == '__main__':
     # servermain('screenshot.png')
-    generate_puzzle()
+    _puzzle = generate_puzzle()
+
+    print("\n")
+    print("Generated Puzzle:")
+    gridprint(_puzzle)
+    print("\n")
+
+    _main_grid = deepcopy(_puzzle)  # to test if puzzle generation works
+    # _main_grid = EMPTYGRID  # to test if the ordering of solutions is correct
+
+    print("\n")
+    print("Target Puzzle:")
+    gridprint(_main_grid)
+    print("\n")
+
+    _st = time.time()
+
+    # solution = Solver(deepcopy(main_grid))
+    _solution = Solver(deepcopy(_main_grid))
+    _could_be_solved, _number_of_solutions, _first_solution = _solution.count_and_solve()
+
+    _et = time.time()
+    _dt = round(_et - _st, 4)
+
+    print(f"Time it took to count solutions and do the simplest solve: {_dt} seconds")
+    print(f"The final grid is {'CORRECT' if _could_be_solved else 'INCORRECT'}\n\n")
+    print(f"The amount of solutions is {'only one!' if (_number_of_solutions == 1) else f'{_number_of_solutions}!'}\n\n")
+
+    print("\n")
+    print("Solved Puzzle:")
+    gridprint(_first_solution)
+    print("\n")
+
     sys.exit(0)
