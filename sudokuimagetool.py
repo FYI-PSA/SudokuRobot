@@ -246,7 +246,7 @@ def split_square_to_81(square_image: Image.Image) -> list:
     return tiles
 
 
-def remove_border_pixels(grayscale_image: np.ndarray, margin_percent=5) -> np.ndarray:
+def remove_border_pixels(grayscale_image: np.ndarray, margin_percent: float = 4.5) -> np.ndarray:
     img_arr = np.asarray(grayscale_image, dtype=np.uint8)
     side = width = height = img_arr.shape[0]
     margin = round(margin_percent*side/100)
@@ -263,7 +263,7 @@ def resize_tile(grayscale_tile: np.ndarray) -> np.ndarray:
 
 
 def clean_tile(grayscale_tile: np.ndarray) -> np.ndarray:
-    borderless_tile: np.ndarray = remove_border_pixels(grayscale_tile, margin_percent=7)
+    borderless_tile: np.ndarray = remove_border_pixels(grayscale_tile, margin_percent=8.45)
     resized_borderless: np.ndarray = resize_tile(borderless_tile)
     return resized_borderless
 
@@ -356,11 +356,11 @@ def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool =
 
     grid = Image.fromarray(largest_square_image)
     inverse_clean_grid = rgb_image_to_inverse_thresholded_grayscale(grid, purpose='recognise', debug=debug)
-    borderless_inverse_clean_grid = Image.fromarray(remove_border_pixels(inverse_clean_grid, margin_percent=1.3))
-    # mind this one ^, it's literally a percentage. so 50 is 50%=0.5
+    borderless_inverse_clean_grid = Image.fromarray(remove_border_pixels(inverse_clean_grid, margin_percent=0.2222))
+    # mind this one ^, it's literally a percentage. so 50 is 50%=0.5. Don't confuse with that I currently want 2 / 1000.
     tiles: list = split_square_to_81(borderless_inverse_clean_grid)
     clean_tiles: list = list(map(clean_tile, tiles))
-
+    # _debug_statement = [cv2.imwrite(f'{i+1}.jpg', t) for (i, t) in enumerate(clean_tiles)]
     return clean_tiles
 
 
@@ -372,8 +372,8 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
     picture_dictionary = {}
     directory = 'numbers/'
     side = 0
-    border_thick = 4
-    thicker_edge = round(border_thick * 1.4)
+    border_thick = 2
+    thicker_edge = round(border_thick * 1.5)
 
     checked_side = False
     for n in range(0, 10):
@@ -381,7 +381,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
         image = Image.open(directory+key)
         # image = ImageOps.expand(image, border=border_thick*4, fill='white')
         # image = ImageOps.expand(image, border=border_thick*3, fill='white')
-        image = ImageOps.expand(image, border=border_thick*3, fill=(255, 255, 255))
+        image = ImageOps.expand(image, border=border_thick*12, fill=(255, 255, 255))  # type: ignore
         # this is a cool pattern but it looks freaky so i'll remove it.
         if not checked_side:
             side = image.width + 10
@@ -433,7 +433,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
 
         # add a black border around individual numbers
         # new_tile = ImageOps.expand(new_tile, border=border_thick, fill='black')
-        new_tile = ImageOps.expand(new_tile, border=border_thick, fill=(0, 0, 0))
+        new_tile = ImageOps.expand(new_tile, border=border_thick, fill=(0, 0, 0))  # type: ignore
 
         new_tile = new_tile.resize((side, side), Image.LANCZOS)
 
@@ -448,7 +448,7 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
     gc.collect()
 
     # image = ImageOps.expand(image, border=thicker_edge, fill='black')
-    image = ImageOps.expand(image, border=thicker_edge, fill=(0, 0, 0))
+    image = ImageOps.expand(image, border=thicker_edge, fill=(0, 0, 0))  # type: ignore
     image = image.resize(size, Image.LANCZOS)
     if mostly_black:
         image = ImageOps.invert(image)

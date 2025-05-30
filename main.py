@@ -190,6 +190,7 @@ async def process_image(update, context):
     print("Yay! The heart beat and did its thing!")
     too_many_solutions_flag = False
     no_unique_solutions_flag = False
+    ai_issue_flag = False
     if success and (possible_err_name is None):
         # await context.bot.send_message(chat_id=update.effective_chat.id, text="Excellent", reply_to_message_id=update.message.message_id)
         pass
@@ -225,10 +226,10 @@ async def process_image(update, context):
         return
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"<b>I can't solve this.</b>\n\n{possible_err_details}", reply_to_message_id=update.message.message_id, parse_mode='HTML')
-
+        ai_issue_flag = True
         print(f"User: {update.message.from_user.username}   |   Failed: {possible_err_name}: {possible_err_line} : {possible_err_details}")
-
-        raise Exception(f"{possible_err_name} : {possible_err_line} : {possible_err_details}")
+        # don't raise, still go through with giving it an image.
+        # raise Exception(f"{possible_err_name} : {possible_err_line} : {possible_err_details}")
 
     with open(solved_image_file_name, 'rb') as img_file:
         solved_image = img_file.read()
@@ -240,6 +241,8 @@ async def process_image(update, context):
         captiontext: str = "Here's one of the possible solutions for your puzzle. It had more than 100 solutions!\nThe other image shows you the full grid without the rest of the image."
     elif no_unique_solutions_flag:
         captiontext: str = "Your puzzle had multiple unique solutions.\nHere's one of them, alongside an image of only the solved puzzle."
+    elif ai_issue_flag:
+        captiontext: str = "The image recognition failed, but the program attempted to solve it regardless.\nIf you see a mismatch between a number you provided and one in this grid, you will know that the AI digit recognition failed!"
     else:
         captiontext: str = "Solved!\nHere's the solved puzzle placed inside the original image, alongside a high quality image of only the solved grid."
     await context.bot.send_media_group(chat_id=update.effective_chat.id, media=mediagroup, caption=captiontext)

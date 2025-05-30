@@ -11,11 +11,8 @@ IMG_SIZE = 128
 # Create a 0(black) grayscale image IMG_SIZExIMG_SIZE pixels
 background = np.zeros((IMG_SIZE, IMG_SIZE, 1), dtype=np.uint8)
 FONT_COLOR = 255
-# thickness = 44
-# thickness = 17
-THICKNESS = 9
-TARGET = 0.87
-# target = 0.74
+THICKNESS = 7
+TARGET = 0.80
 
 try:
     THICKNESS = int(sys.argv[1])

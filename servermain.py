@@ -18,12 +18,15 @@ if os.name != "nt":
     print = logging.info
 
 
-def get_file_name_info(fname: str) -> Tuple[str, str]:
-    filename = str(fname)
+def get_file_name_info(file_name: str) -> Tuple[str, str]:
+    # print(file_name)
+    filename = str(file_name)
     splitname = filename.split('.')
     ext = splitname[-1]
     actual_name = ''.join(splitname[0:-1])
-    return (actual_name, ext)
+    result = (actual_name, ext)
+    # print(result)
+    return result
 
 
 def gridstring(grid):
@@ -311,6 +314,7 @@ class Solver():
 
     def count_and_solve(self) -> Tuple[bool, int, List[List[int]]]:
         if self.check_is_solved(self.GRID):
+            self.COUNT = max(1, self.COUNT)  # in case it's being fed an already fully solved grid.
             return (True, self.COUNT, self.first_solution)
         self.brute_all_solves(deepcopy(self.first_grid))
         self.GRID = deepcopy(self.first_solution)
@@ -483,7 +487,7 @@ def generate_puzzle(diff: int = 0) -> List[List[int]]:
     return new_grid
 
 
-def read_grid_picture_to_grid(keras_model, filename, grayscale_numpy_tiles_list_to_predicted_integer_list) -> List[List[int]]:
+def read_grid_picture_to_grid(keras_model, filename: str, predict_grayscale_function) -> List[List[int]]:
     current_directory_files = [str(f) for f in os.listdir(os.getcwd())]
     if not (str(filename) in current_directory_files):
         print(colored(f"[>] The image '{filename}' isn't present in the current directory. Make sure to add it!", "magenta"))
@@ -491,7 +495,7 @@ def read_grid_picture_to_grid(keras_model, filename, grayscale_numpy_tiles_list_
         print(colored("[>] No need to close the program; Just press the Enter key again and I'll process your image for you once you place it here.", "yellow"))
         raise Exception(f"Image file not found? Why? filename: {filename}, dir: {os.getcwd()}, ls: {os.listdir(os.getcwd())}")
     tile_images = sudokuimagetool.process_image_file_to_list_of_polished_np_tiles(filename=filename)
-    tiles = grayscale_numpy_tiles_list_to_predicted_integer_list(tiles=tile_images, model=keras_model)
+    tiles = predict_grayscale_function(tiles=tile_images, model=keras_model)
     grid = [tiles[i:i + 9] for i in range(0, 81, 9)]
     return (deepcopy(grid))
 
@@ -507,7 +511,7 @@ def write_grid_to_grid_picture(tiles_list: list, og_file_name: str, solved_file_
 
 def main(model, filename, predict_grayscale_func) -> Tuple[int, List[List[int]]]:
     # main thing with all of the main UX and styling going on. gets the time to solve, solves the grid, returns the amount of solutions and the first one.
-    main_grid = read_grid_picture_to_grid(filename=filename, keras_model=model, grayscale_numpy_tiles_list_to_predicted_integer_list=predict_grayscale_func)
+    main_grid = read_grid_picture_to_grid(filename=filename, keras_model=model, predict_grayscale_function=predict_grayscale_func)
 
     print("\n")
     print(colored("Unsolved Grid:\n", "blue"))
@@ -548,8 +552,9 @@ def servermain(filename, ai_model, predict_grayscale_func) -> Tuple[bool, str, s
     grid_name = str(f"{name}_solved_grid.{ext}")
     solved_name = str(f"{name}_solved.{ext}")
 
-    print(f'name {name} ext {ext} grid_name {grid_name} solved_name {solved_name}')
+    print(f"name: {name} |  ext: {ext} |  grid_name: {grid_name} |  solved_name: {solved_name}")
 
+    solved_status = True
     error_message, error_name, error_line = None, None, None
 
     try:
@@ -568,30 +573,34 @@ def servermain(filename, ai_model, predict_grayscale_func) -> Tuple[bool, str, s
     if count_of_solutions == -1:  # it's when (could_be_solved == False)
         print("The code progressed all the way here, but (could_be_solved) was False")
         err_message_html: str = (
-            "There's an error in one of the following:\n\n"
+            "There's an issue with one of the following:\n\n"
             ""
             "- <b>The image quality</b>\n"
             "    <blockquote> Try sending a clearer picture, more zoomed in and clearer digits, and an obvious square grid with visibly distinct edges in the image. </blockquote>\n\n"
             "- <b>The puzzle configuration</b>\n"
-            "    <blockquote> If you still face this message after the previous step, check the validity of your puzzle. </blockquote>\n\n"
-            "- <b>The program</b>\n"
-            "    <blockquote> If your image and puzzle are both correct and visible, report this issue to the admin on Telegram: <a href='https://t.me/FYI_PSA/'>@FYI_PSA</a> </blockquote>\n"
+            "    <blockquote> If you still face this message after the previous step, check that your puzzle is indeed valid and has a solution. </blockquote>\n\n"
+            "- <b>The image recognition</b>\n"
+            # "    <blockquote> If your image and puzzle are both correct and visible, report this issue to the admin on Telegram: <a href='https://t.me/FYI_PSA/'>@FYI_PSA</a> </blockquote>\n"
+            "    <blockquote> If your image and puzzle are both correct and visible, report this issue to the admin on Telegram: @FYI_PSA </blockquote>\n"
             ""
             )
-        return (False, grid_name, solved_name, returned_grid, str(err_message_html), 'CouldNotBeSolved', 309)
-
-    if 1 < count_of_solutions <= 100:
+        solved_status = False
+        error_message = str(err_message_html)
+        error_name = 'CouldNotBeSolved'
+        error_line = 589
+    # put these two in elif, because the lack of solutions is more important
+    # (even though count_of_solutions should still be 0 and thus wouldn't cause problems)
+    elif 1 < count_of_solutions <= 100:
         print("got a bunch of results but it's not more than a hundred")
         error_message = "The puzzle didn't have a unique solutions"
         error_name = "Solutions not unique"
-        error_line = 587
-
+        error_line = 596
     elif count_of_solutions > 100:
         print("got too many solutions")
-        count_of_solutions = 101
+        # count_of_solutions = 101  # I'm 99% sure with the new code, it already is 101.
         error_message = "This puzzle has at least 100 solutions!"
         error_name = "Too many solutions"
-        error_line = 594
+        error_line = 602
 
     gc.collect()
     solved_tiles = []
@@ -609,22 +618,42 @@ def servermain(filename, ai_model, predict_grayscale_func) -> Tuple[bool, str, s
         error_line = (-1 if last_event is None else last_event.tb_lineno)
 
     print('going home...')
-    return (True, grid_name, solved_name, returned_grid, error_message, error_name, error_line)
+    return (solved_status, grid_name, solved_name, returned_grid, error_message, error_name, error_line)
     # return value:
     # successful as a boolean, name of solved grid file as a string, name of solved full image file as a string, completed or not grid as 9 lists of 9 numbers in a list, error message as a string, error name as a string, error line as an int
 
 
 if __name__ == '__main__':
-    # servermain('screenshot.png')
-    _puzzle = generate_puzzle()
 
-    print("\n")
-    print("Generated Puzzle:")
-    gridprint(_puzzle)
-    print("\n")
+    # TEST = 'PUZZLE'  # to test if the puzzle generation works
+    # TEST = 'READ'  # to test if the image reading works
+    TEST = 'SERVER'  # to test the main() and servermain() functions
+    # TEST = 'EMPTY'  # to test if the ordering of solutions is correct
 
-    _main_grid = deepcopy(_puzzle)  # to test if puzzle generation works
-    # _main_grid = EMPTYGRID  # to test if the ordering of solutions is correct
+    match TEST:
+        case 'PUZZLE':
+            _puzzle = generate_puzzle()
+            _main_grid = deepcopy(_puzzle)
+            print("\n")
+            print("Generated Puzzle:")
+            gridprint(_puzzle)
+            print("\n")
+        case 'READ':
+            from tilereader import load_model
+            from tilereader import grayscale_numpy_tiles_list_to_predicted_integer_list as predict_function
+            loaded_model = load_model()
+            _main_grid = read_grid_picture_to_grid(loaded_model, 'screenshot.png', predict_function)
+        case 'SERVER':
+            from tilereader import load_model
+            from tilereader import grayscale_numpy_tiles_list_to_predicted_integer_list as predict_function
+            loaded_model = load_model()
+            servermain('screenshot.png', loaded_model, predict_function)
+            sys.exit(0)
+        case _:
+            _main_grid = EMPTYGRID
+
+    # currently has an issue where the cv2.putText fonts is causing it to see it's own response's 3s as 5s.
+    # TODO: fix this.
 
     print("\n")
     print("Target Puzzle:")
