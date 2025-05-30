@@ -356,7 +356,7 @@ def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool =
 
     grid = Image.fromarray(largest_square_image)
     inverse_clean_grid = rgb_image_to_inverse_thresholded_grayscale(grid, purpose='recognise', debug=debug)
-    borderless_inverse_clean_grid = Image.fromarray(remove_border_pixels(inverse_clean_grid, margin_percent=50))
+    borderless_inverse_clean_grid = Image.fromarray(remove_border_pixels(inverse_clean_grid, margin_percent=1.3))
     # mind this one ^, it's literally a percentage. so 50 is 50%=0.5
     tiles: list = split_square_to_81(borderless_inverse_clean_grid)
     clean_tiles: list = list(map(clean_tile, tiles))
