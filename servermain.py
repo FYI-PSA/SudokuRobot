@@ -384,6 +384,7 @@ def generate_puzzle(diff: int = 0) -> List[List[int]]:
 
     Args:
         diff (int, optional): For each level, it adds one additional tile of information. Defaults to 0 for hard mode.
+        Negative values might cause the puzzle to have multiple solutions.
 
     Returns:
         list: The unsolved puzzle, as a 9 by 9 list.
@@ -445,7 +446,7 @@ def generate_puzzle(diff: int = 0) -> List[List[int]]:
         print('Random is choosing incorrectly?')
         random = random % count
 
-    print(f"Out of {count} possible grids, #{random} was chosen.")
+    # print(f"Out of {count} possible grids, #{random} was chosen.")
 
     full_grid = solve_it.get_solution_from_index(random)
 
@@ -487,6 +488,35 @@ def generate_puzzle(diff: int = 0) -> List[List[int]]:
     return new_grid
 
 
+def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: float | int = 0.5, maximum_tries: int = 50) -> List[List[int]]:
+    target_fullness = round(maximum_desired_fullness, 4)
+    if maximum_desired_fullness >= 1:
+        digits: int = np.ceil(np.log10(target_fullness))
+        target_fullness = round((maximum_desired_fullness / pow(10, digits)), 4)
+    # print(target_fullness)
+    least_fullness = 1.0
+    least_full_found_grid = EMPTYGRID
+    count = 0
+    while count < maximum_tries:
+        puzzle_grid = generate_puzzle(diff)
+        puzzle_items = grid_to_list(puzzle_grid)
+        empty_tile_count = puzzle_items.count(0)
+        full_tile_count = 81 - empty_tile_count
+        current_fullness = round((full_tile_count / 81), 4)
+        # print(f'current fullness percent:  {full_tile_count}/{81}  |  {round(current_fullness, 4) * 100}%')
+        # print(f'        maximum fullness:  {round(target_fullness, 4) * 100}%')
+        print(f' {count} :   {current_fullness*100}%   |?|   {target_fullness*100}%')
+        if current_fullness <= target_fullness:
+            return puzzle_grid
+        if current_fullness < least_fullness:
+            least_fullness = current_fullness
+            least_full_found_grid = deepcopy(puzzle_grid)
+        count += 1
+    print("Couldn't find a grid in target range within the try limit.")
+    print(f"Best I could do is {100*least_fullness}% full.")
+    return least_full_found_grid
+
+
 def read_grid_picture_to_grid(keras_model, filename: str, predict_grayscale_function) -> List[List[int]]:
     current_directory_files = [str(f) for f in os.listdir(os.getcwd())]
     if not (str(filename) in current_directory_files):
@@ -501,12 +531,12 @@ def read_grid_picture_to_grid(keras_model, filename: str, predict_grayscale_func
 
 
 def write_grid_to_grid_picture(tiles_list: list, og_file_name: str, solved_file_name: str, grid_name: str):
-    print("saving to files...")
+    # print("saving to files...")
     largest_square, solved_grid, org_rgb_image, mostly_black = sudokuimagetool.write_solved_grid_to_image(new_file_name=grid_name, filename=og_file_name, tile_list=tiles_list)
-    print("saved grid to it's own image.")
+    # print("saved grid to it's own image.")
     gc.collect()
     sudokuimagetool.write_solved_grid_to_original_image(solved_file_name, largest_square, solved_grid, org_rgb_image, mostly_black)
-    print("saved grid on the original image")
+    # print("saved grid on the original image")
 
 
 def main(model, filename, predict_grayscale_func) -> Tuple[int, List[List[int]]]:
@@ -623,21 +653,33 @@ def servermain(filename, ai_model, predict_grayscale_func) -> Tuple[bool, str, s
     # successful as a boolean, name of solved grid file as a string, name of solved full image file as a string, completed or not grid as 9 lists of 9 numbers in a list, error message as a string, error name as a string, error line as an int
 
 
-if __name__ == '__main__':
+def test() -> None:  # type: ignore
+    # pylint: disable=W0612
+    # pylint: disable=C0103
+    # pylint: disable=C0415
 
-    # TEST = 'PUZZLE'  # to test if the puzzle generation works
+    TEST = 'PUZZLE'  # to test if the puzzle generation works
     # TEST = 'READ'  # to test if the image reading works
-    TEST = 'SERVER'  # to test the main() and servermain() functions
+    # TEST = 'SERVER'  # to test the main() and servermain() functions
     # TEST = 'EMPTY'  # to test if the ordering of solutions is correct
 
     match TEST:
         case 'PUZZLE':
-            _puzzle = generate_puzzle()
+            # _puzzle = generate_puzzle_with_less_tiles(-2, 35)
+            # Way too many solutions
+            # _puzzle = generate_puzzle_with_less_tiles(-1, 42.5)
+            # Only goes up to around 3 solutions at max
+            # I'll have a higher full% so it's more around 2 possible solutions
+            # _puzzle = generate_puzzle_with_less_tiles(-1, 46)
+            # _puzzle = generate_puzzle_with_less_tiles(0, 45)
+            # Sometimes it feels too easy
+            # I'll make it generate less, but I'll give it a limit of 7 so that it's not too slow
+            _puzzle = generate_puzzle_with_less_tiles(0, 42.5, maximum_tries=7)
+            # _puzzle = generate_puzzle_with_less_tiles(1, 50)
+            # _puzzle = generate_puzzle_with_less_tiles(2, 60)
             _main_grid = deepcopy(_puzzle)
             print("\n")
             print("Generated Puzzle:")
-            gridprint(_puzzle)
-            print("\n")
         case 'READ':
             from tilereader import load_model
             from tilereader import grayscale_numpy_tiles_list_to_predicted_integer_list as predict_function
@@ -647,13 +689,21 @@ if __name__ == '__main__':
             from tilereader import load_model
             from tilereader import grayscale_numpy_tiles_list_to_predicted_integer_list as predict_function
             loaded_model = load_model()
-            servermain('screenshot.png', loaded_model, predict_function)
+            # successful as a boolean, name of solved grid file as a string, name of solved full image file as a string, completed or not grid as 9 lists of 9 numbers in a list, error message as a string, error name as a string, error line as an int
+            test_results = servermain('screenshot.png', loaded_model, predict_function)
+            (
+                success,
+                solved_grid_file_name,
+                solved_image_file_name,
+                resulting_grid,
+                potential_error_message,
+                potential_error_name,
+                potential_error_line
+            ) = test_results
+            print(test_results)
             sys.exit(0)
         case _:
             _main_grid = EMPTYGRID
-
-    # currently has an issue where the cv2.putText fonts is causing it to see it's own response's 3s as 5s.
-    # TODO: fix this.
 
     print("\n")
     print("Target Puzzle:")
@@ -678,4 +728,7 @@ if __name__ == '__main__':
     gridprint(_first_solution)
     print("\n")
 
+
+if __name__ == '__main__':
+    test()
     sys.exit(0)

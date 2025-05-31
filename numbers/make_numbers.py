@@ -1,6 +1,3 @@
-import numpy as np
-# import sys
-# import cv2
 from PIL import Image, ImageDraw, ImageFont
 from PIL.ImageOps import invert
 
