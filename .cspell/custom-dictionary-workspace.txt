@@ -33,5 +33,6 @@ semisquare
 servermain
 sudokuimagetool
 termcolor
+textsize
 thresholded
 tilereader

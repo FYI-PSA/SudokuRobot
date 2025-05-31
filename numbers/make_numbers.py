@@ -1,63 +1,62 @@
 import numpy as np
-import sys
-import cv2
+# import sys
+# import cv2
+from PIL import Image, ImageDraw, ImageFont
+from PIL.ImageOps import invert
 
-# IMG_SIZE = 512
-# too heavy
-# IMG_SIZE = 216
-# still too heavy
-IMG_SIZE = 128
+# IMG_SIZE = 512  # Too large
+# IMG_SIZE = 216  # Still a bit too much
+# IMG_SIZE = 128  # A bit too small
+# IMG_SIZE = 171  # Average of 216 and 128
+IMG_SIZE = 162  # 81 * 2
 
-# Create a 0(black) grayscale image IMG_SIZExIMG_SIZE pixels
-background = np.zeros((IMG_SIZE, IMG_SIZE, 1), dtype=np.uint8)
+# black (value of 0)
+# grayscale image (1 channel)
+# IMG_SIZE pixels by IMG_SIZE pixels sized
+BACKGROUND_IMAGE = Image.new(mode="RGB", size=(IMG_SIZE, IMG_SIZE), color=(0, 0, 0))  # type: ignore
+WHITE_IMAGE = Image.new(mode="RGB", size=(IMG_SIZE, IMG_SIZE), color=(255, 255, 255))  # type: ignore
+
+WHITE_IMAGE.save('0.png')
+print('saved "0.png"')
+
 FONT_COLOR = 255
-THICKNESS = 7
-TARGET = 0.80
+TARGET = 0.81
 
-try:
-    THICKNESS = int(sys.argv[1])
-except Exception:
-    pass
-print(THICKNESS)
-line_type = cv2.LINE_AA
-LIMIT = TARGET * IMG_SIZE
-ORIGIN_SHOULD_BE_BOTTOM_LEFT = False  # if false, instead its in the top left
+LIMIT = IMG_SIZE * TARGET
 
-# font = cv2.FONT_HERSHEY_COMPLEX
-font = cv2.FONT_HERSHEY_SIMPLEX
-# font = cv2.FONT_HERSHEY_DUPLEX
+# ANCHOR = 'ls'  # left bottom(baseline, only works in single lines)
+ANCHOR = 'mm'  # exact middle
+ORIGIN = (round(IMG_SIZE/2), round(IMG_SIZE/2))
 
 for n in range(1, 10):
-    text = str(n)  # pylint: disable=C0103
-    size = (0, 0)
-    font_scale_ = 0.1  # pylint: disable=C0103
-    font_scale = 0.1  # pylint: disable=C0103
-    run_loop = True  # pylint: disable=C0103
-    while run_loop:
-        size = cv2.getTextSize(text=text, fontFace=font, fontScale=font_scale_, thickness=THICKNESS)[0]
+    size = (0, 0)  # pylint: disable=C0103
+    variable_font_size = 0  # pylint: disable=C0103
+    font_size = 1  # pylint: disable=C0103
+
+    font_object = ImageFont.truetype(font='arial', size=font_size)
+
+    TEXT = str(n)
+    N_IMAGE: Image.Image = BACKGROUND_IMAGE.copy()
+    PEN_OBJECT = ImageDraw.Draw(N_IMAGE)
+
+    RUN_LOOP = True
+    while RUN_LOOP:
+        font_object = ImageFont.truetype(font='arial', size=font_size)
+        size = font_object.getsize(text=TEXT)
         if size[0] > LIMIT or size[1] > LIMIT:
-            run_loop = False  # pylint: disable=C0103
+            RUN_LOOP = False  # pylint: disable=C0103
             break
-        font_scale = font_scale_  # pylint: disable=C0103
-        font_scale_ += 0.222
-        font_scale_ = round(font_scale_, 3)
-    width, height = cv2.getTextSize(text=text, fontFace=font, fontScale=font_scale, thickness=THICKNESS)[0]
-    origin = (int((IMG_SIZE-width)/2), int((IMG_SIZE+height)/2))
-    new_image = background.copy()
-    cv2.putText(
-        img=new_image,
-        text=text,
-        org=origin,
-        bottomLeftOrigin=ORIGIN_SHOULD_BE_BOTTOM_LEFT,
-        fontFace=font,
-        fontScale=font_scale,
-        color=FONT_COLOR,  # type: ignore
-        thickness=THICKNESS,
-        lineType=line_type
-        )
-    new_image = np.asarray(255.0 - new_image, dtype=np.uint8)
-    as_rgb_img = cv2.cvtColor(new_image, cv2.COLOR_GRAY2RGB)
-    cv2.imwrite(f'{text}.png', as_rgb_img)
-    print(f'saved "{text}.png"')
-cv2.imwrite('0.png', cv2.cvtColor(np.asarray(255.0 - background, dtype=np.uint8), cv2.COLOR_GRAY2RGB))
-print('saved "0.png"')
+        font_size = variable_font_size  # pylint:disable=C0103
+        variable_font_size += 1
+        variable_font_size = round(variable_font_size, 3)
+
+    font_object = ImageFont.truetype(font='arial', size=font_size)
+    # width, height = font_object.getsize(text=TEXT)
+    # origin = (int((IMG_SIZE-width)/2), int((IMG_SIZE+height)/2))
+    # for the 'ls' anchor
+    PEN_OBJECT.text(text=TEXT, xy=ORIGIN, anchor=ANCHOR, fill=(255, 255, 255), font=font_object)
+    FILE_NAME = f'{TEXT}.png'
+    N_IMAGE = invert(N_IMAGE)
+    N_IMAGE.save(fp=FILE_NAME)
+    print(f'saved "{FILE_NAME}"')
+    del N_IMAGE
