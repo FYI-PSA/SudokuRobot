@@ -254,6 +254,82 @@ async def process_image(update, context):
     os.remove(img_file_name)
 
 
+async def send_generated_modular(update, context, difficulty: str, first_response: str, caption: str):
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=first_response, reply_to_message_id=update.message.message_id)
+    files = os.listdir()
+    file_counter = 0
+    file_name = f"puzzle_hard_{file_counter}.png"
+    while file_name in files:
+        file_counter += 1
+        file_name = f"puzzle_hard_{file_counter}.png"
+    with open(file_name, 'wb') as temp_write_file:
+        temp_write_file.write(b'\x00')
+    result = servermain.make_puzzle(file_name, difficulty=difficulty)
+    (
+        puzzle_grid,
+        puzzle_file_name,
+        possible_error_message,
+        possible_error_name,
+        possible_error_line
+    ) = result
+    if possible_error_message is not None:
+        response: str = (
+            "The puzzle was generated successfully, but there was an error while attempting to make it into an image.\n"
+            "Please report the admin @FYI_PSA\n"
+            "Sending your solved puzzle as a message instead."
+            )
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=response, reply_to_message_id=update.message.message_id)
+        gridstr: str = servermain.gridstring(puzzle_grid)
+        gridstr = ''.join(['_' if item == '0' else item for item in gridstr])
+        print(gridstr)
+        print(f"User: {update.message.from_user.username}   |   Failed: {possible_error_name}: {possible_error_line} : {possible_error_message}")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=gridstr, reply_to_message_id=update.message.message_id)
+        return
+
+    with open(puzzle_file_name, 'rb') as puzzle_file:
+        puzzle_image = puzzle_file.read()
+
+    mediagroup = [InputMediaPhoto(media=puzzle_image)]
+
+    has_more_than_one_solution_flag = False
+    # later make it one of the responses of make_puzzle
+    # for now I'm just implementing this to not have to modify this code later
+
+    if has_more_than_one_solution_flag:
+        captiontext: str = "!"
+    else:
+        captiontext: str = caption
+
+    await context.bot.send_media_group(chat_id=update.effective_chat.id, media=mediagroup, caption=captiontext)
+
+    print(f"User: {update.message.from_user.username}   |   File name: {file_name}")
+
+    gc.collect()
+
+    os.remove(puzzle_file_name)
+
+
+async def send_hard_generated(update, context):
+    first_response: str = "Generating and sending a difficult puzzle.\nThis process will take up to a minute or two..."
+    caption: str = "Difficulty: **HARD**"
+    difficulty: str = "HARD"
+    return await send_generated_modular(update=update, context=context, difficulty=difficulty, first_response=first_response, caption=caption)
+
+
+async def send_easy_generated(update, context):
+    first_response: str = "Generating and sending an easy puzzle.\nThis process will take up to a minute or two..."
+    caption: str = "Difficulty: **EASY**"
+    difficulty: str = "EASY"
+    return await send_generated_modular(update=update, context=context, difficulty=difficulty, first_response=first_response, caption=caption)
+
+
+async def send_medium_generated(update, context):
+    first_response: str = "Generating and sending a medium difficulty puzzle.\nThis process will take up to a minute or two..."
+    caption: str = "Difficulty: **MEDIUM**"
+    difficulty: str = "MEDIUM"
+    return await send_generated_modular(update=update, context=context, difficulty=difficulty, first_response=first_response, caption=caption)
+
+
 async def save_attachment_to_file(update, context) -> str:  # pylint: disable=W0613
     new_file = await update.message.effective_attachment[-1].get_file()
     new_file_name = await new_file.download_to_drive()
@@ -292,12 +368,22 @@ def main(bot_token, admin_id):
 
     start_handler = CommandHandler('start', start)
     help_handler = CommandHandler('help', help)
+
+    generate_hard_handler = CommandHandler('generate_hard', send_hard_generated)
+    generate_easy_handler = CommandHandler('generate_easy', send_easy_generated)
+    generate_medium_handler = CommandHandler('generate', send_medium_generated)
+
     message_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), respond_messages)
     image_handler = MessageHandler(filters.PHOTO & (filters.FORWARDED | ~filters.FORWARDED), process_image)
 
     # the order of these is important, otherwise if you put a general rule after a specific rule, the specific will be overridden
     application.add_handler(start_handler)
     application.add_handler(help_handler)
+
+    application.add_handler(generate_hard_handler)
+    application.add_handler(generate_easy_handler)
+    application.add_handler(generate_medium_handler)
+
     application.add_handler(message_handler)
     application.add_handler(image_handler)
 

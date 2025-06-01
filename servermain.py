@@ -530,13 +530,18 @@ def read_grid_picture_to_grid(keras_model, filename: str, predict_grayscale_func
     return (deepcopy(grid))
 
 
-def write_grid_to_grid_picture(tiles_list: list, og_file_name: str, solved_file_name: str, grid_name: str):
+def write_grid_to_grid_picture(tiles_list: List[int], og_file_name: str, solved_file_name: str, grid_name: str):
     # print("saving to files...")
     largest_square, solved_grid, org_rgb_image, mostly_black = sudokuimagetool.write_solved_grid_to_image(new_file_name=grid_name, filename=og_file_name, tile_list=tiles_list)
     # print("saved grid to it's own image.")
     gc.collect()
     sudokuimagetool.write_solved_grid_to_original_image(solved_file_name, largest_square, solved_grid, org_rgb_image, mostly_black)
     # print("saved grid on the original image")
+
+
+def write_puzzle_to_image(tiles_list: List[int], file_name: str):
+    # It's closer to an interface if anything, but I still want to not use sudokuimagetool.func in main code to avoid too much spaghetti
+    sudokuimagetool.write_new_grid_to_new_image(new_file_name=file_name, tile_list=tiles_list)
 
 
 def main(model, filename, predict_grayscale_func) -> Tuple[int, List[List[int]]]:
@@ -633,9 +638,7 @@ def servermain(filename, ai_model, predict_grayscale_func) -> Tuple[bool, str, s
         error_line = 602
 
     gc.collect()
-    solved_tiles = []
-    for row in returned_grid:
-        solved_tiles.extend(row)
+    solved_tiles = grid_to_list(returned_grid)
     print(f'dissolved grid to {solved_tiles}')
 
     try:
@@ -651,6 +654,54 @@ def servermain(filename, ai_model, predict_grayscale_func) -> Tuple[bool, str, s
     return (solved_status, grid_name, solved_name, returned_grid, error_message, error_name, error_line)
     # return value:
     # successful as a boolean, name of solved grid file as a string, name of solved full image file as a string, completed or not grid as 9 lists of 9 numbers in a list, error message as a string, error name as a string, error line as an int
+
+
+def make_puzzle(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
+    """Generates a sudoku puzzle image based on the difficulty and saves it to your `file_name`
+
+    Args:
+        file_name (str): The full name (including extension) of the file you want the image to be saved as
+        (optional) difficulty (str): The difficulty of the puzzle (Must be: `HARD`, `MED`/`MEDIUM`, `EASY`)
+            \n (Defaults to `MEDIUM` if not provided or incorrectly provided)
+
+    Return:
+        Tuple of the following in the same order:\n
+        - Puzzle Grid  as  List[List[int]]
+        - Puzzle Image File Name  as  str
+        - Possible Error Message  as  str or None
+        - Possible Error Name  as  str or None
+        - Possible Error Line  as  int or None
+    """
+
+    filename = str(file_name)
+    difficulty = str(difficulty).strip().upper()
+    # name, ext = map(str, get_file_name_info(filename))
+    # puzzle_name = str(f"{name}_solved.{ext}")
+    # print(f"name: {name} |  ext: {ext} |  puzzle_name: {puzzle_name}")
+
+    match difficulty:
+        case 'HARD':
+            puzzle_grid = generate_puzzle_with_less_tiles(diff=0, maximum_desired_fullness=42, maximum_tries=7)
+        case 'EASY':
+            puzzle_grid = generate_puzzle_with_less_tiles(diff=2, maximum_desired_fullness=66, maximum_tries=6)
+        case _:
+            puzzle_grid = generate_puzzle_with_less_tiles(diff=1, maximum_desired_fullness=50, maximum_tries=5)
+
+    gc.collect()
+    puzzle_tiles = grid_to_list(puzzle_grid)
+    print(f'dissolved grid to {puzzle_tiles}')
+
+    error_message, error_name, error_line = None, None, None
+    try:
+        write_puzzle_to_image(puzzle_tiles, filename)
+    except Exception as err:
+        print('write to file failed with an error')
+        error_message = str(err)
+        error_name = type(err).__name__
+        last_event = sys.exc_info()[-1]
+        error_line = (-1 if last_event is None else last_event.tb_lineno)
+
+    return (puzzle_grid, filename, error_message, error_name, error_line)
 
 
 def test() -> None:  # type: ignore

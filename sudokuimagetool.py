@@ -2,7 +2,7 @@ import numpy as np
 from PIL import Image, ImageOps
 import cv2
 from copy import deepcopy
-from typing import Tuple
+from typing import List, Tuple
 # from matplotlib import pyplot as plt
 
 import gc
@@ -368,7 +368,7 @@ def process_image_file_to_list_of_polished_np_tiles(filename: str, debug: bool =
 # 1. lower the size of the numbers/ files
 # 2. lower the size of this image
 # This is both slow and ugly.
-def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image.Image:
+def generate_grid(tiles: List[int], size: tuple, mostly_black: bool = False) -> Image.Image:
     picture_dictionary = {}
     directory = 'numbers/'
     side = 0
@@ -455,7 +455,14 @@ def generate_grid(tiles: list, size: tuple, mostly_black: bool = False) -> Image
     return image
 
 
-def write_solved_grid_to_image(new_file_name: str, filename: str, tile_list: list) -> Tuple[Tuple[int, int, int, int], Image.Image, Image.Image, bool]:
+def write_new_grid_to_new_image(new_file_name: str, tile_list: List[int]) -> None:
+    grid_size = (1024, 1024)
+    # grid_size = (512, 512)
+    new_image = generate_grid(tile_list, grid_size, False)
+    new_image.save(new_file_name)
+
+
+def write_solved_grid_to_image(new_file_name: str, filename: str, tile_list: List[int]) -> Tuple[Tuple[int, int, int, int], Image.Image, Image.Image, bool]:
     org_rgb_image: Image.Image = rgb_image_from_file(filename)
     rgb_image = deepcopy(org_rgb_image)
     blurmode = 0
