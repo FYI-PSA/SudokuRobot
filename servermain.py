@@ -487,14 +487,16 @@ def generate_puzzle(diff: int = 0) -> List[List[int]]:
     return new_grid
 
 
-def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: float | int = 0.5, maximum_tries: int = 50) -> List[List[int]]:
+def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: float | int = 0.5, maximum_tries: int = 50, get_min: bool = True) -> List[List[int]]:
     target_fullness = round(maximum_desired_fullness, 4)
     if maximum_desired_fullness >= 1:
         digits: int = np.ceil(np.log10(target_fullness))
         target_fullness = round((maximum_desired_fullness / pow(10, digits)), 4)
     # print(target_fullness)
     least_fullness = 1.0
-    least_full_found_grid = EMPTYGRID
+    least_full_found_grid = deepcopy(EMPTYGRID)
+    most_fullness = 0.0
+    most_full_found_grid = deepcopy(EMPTYGRID)
     count = 0
     while count < maximum_tries:
         puzzle_grid = generate_puzzle(diff)
@@ -507,14 +509,20 @@ def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: flo
         print(f' {count} :   {current_fullness*100}%   |?|   {target_fullness*100}%')
         if current_fullness <= target_fullness:
             return puzzle_grid
-        if current_fullness < least_fullness:
+        if (get_min) and (current_fullness < least_fullness):
             least_fullness = current_fullness
             least_full_found_grid = deepcopy(puzzle_grid)
+        if (not get_min) and (current_fullness > most_fullness):
+            most_fullness = current_fullness
+            most_full_found_grid = deepcopy(puzzle_grid)
         count += 1
         gc.collect()
     print("Couldn't find a grid in target range within the try limit.")
-    print(f"Best I could do is {100*least_fullness}% full.")
-    return least_full_found_grid
+    print(f"Lowest I could do is {100*least_fullness}% full.")
+    print(f"Highest I could do is {100*most_fullness}% full.")
+    if get_min:
+        return least_full_found_grid
+    return most_full_found_grid
 
 
 def read_grid_picture_to_grid(keras_model, filename: str, predict_grayscale_function) -> List[List[int]]:
@@ -681,13 +689,13 @@ def make_puzzle(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[i
 
     match difficulty:
         case 'HARD':
-            puzzle_grid = generate_puzzle_with_less_tiles(diff=0, maximum_desired_fullness=43, maximum_tries=5)
+            puzzle_grid = generate_puzzle_with_less_tiles(diff=0, maximum_desired_fullness=44, maximum_tries=3, get_min=True)
             print('Generating a new HARD puzzle')
         case 'EASY':
-            puzzle_grid = generate_puzzle_with_less_tiles(diff=8, maximum_desired_fullness=77, maximum_tries=3)
+            puzzle_grid = generate_puzzle_with_less_tiles(diff=8, maximum_desired_fullness=77, maximum_tries=3, get_min=False)
             print('Generating a new EASY puzzle')
         case _:
-            puzzle_grid = generate_puzzle_with_less_tiles(diff=4, maximum_desired_fullness=55, maximum_tries=4)
+            puzzle_grid = generate_puzzle_with_less_tiles(diff=4, maximum_desired_fullness=61.5, maximum_tries=3, get_min=False)
             print('Generating a new MEDIUM puzzle')
 
     gc.collect()
