@@ -176,7 +176,8 @@ async def respond_messages(update, context):
 
 
 async def process_image(update, context):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="Solving...\nPlease wait, this may take up to a minute depending on the load on the server...", reply_to_message_id=update.message.message_id)
+    first_reply = await context.bot.send_message(chat_id=update.effective_chat.id, text="Solving...\nPlease wait, this may take up to a minute depending on the load on the server...", reply_to_message_id=update.message.message_id)
+
     print("Brb...")
 
     img_file_name = await save_attachment_to_file(update, context)
@@ -198,6 +199,8 @@ async def process_image(update, context):
         possible_err_name,
         possible_err_line
         ) = response_tuple
+
+    await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=first_reply.message_id)
 
     print("Yay! The heart beat and did its thing!")
     too_many_solutions_flag = False
@@ -267,7 +270,7 @@ async def process_image(update, context):
 
 
 async def send_generated_modular(update, context, difficulty: str, first_response: str, caption: str):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=first_response, reply_to_message_id=update.message.message_id)
+    first_reply = await context.bot.send_message(chat_id=update.effective_chat.id, text=first_response, reply_to_message_id=update.message.message_id)
     print('Sent message.')
     files = os.listdir()
     file_counter = 0
@@ -286,6 +289,9 @@ async def send_generated_modular(update, context, difficulty: str, first_respons
         possible_error_name,
         possible_error_line
     ) = result
+
+    await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=first_reply.message_id)
+
     if possible_error_message is not None:
         response: str = (
             "The puzzle was generated successfully, but there was an error while attempting to make it into an image.\n"
