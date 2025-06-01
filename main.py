@@ -227,8 +227,8 @@ async def process_image(update, context):
     with open(solved_image_file_name, 'rb') as img_file:
         solved_image = img_file.read()
     with open(solved_grid_file_name, 'rb') as grd_file:
-        solved_grid = grd_file.read()
-    mediagroup = [InputMediaPhoto(media=solved_image), InputMediaPhoto(media=solved_grid)]
+        solved_grid_image = grd_file.read()
+    mediagroup = [InputMediaPhoto(media=solved_image), InputMediaPhoto(media=solved_grid_image)]
 
     if too_many_solutions_flag:
         captiontext: str = "Here's one of the possible solutions for your puzzle. It had more than 100 solutions!\nThe other image shows you the full grid without the rest of the image."
@@ -240,7 +240,7 @@ async def process_image(update, context):
         captiontext: str = "Solved!\nHere's the solved puzzle placed inside the original image, alongside a high quality image of only the solved grid."
     await context.bot.send_media_group(chat_id=update.effective_chat.id, media=mediagroup, caption=captiontext)
 
-    print(f"User: {update.message.from_user.username}   |   File name: {img_file_name}   |   Grid: {solved_grid}")
+    print(f"User: {update.message.from_user.username}   |   File name: {img_file_name}   |   Grid: {solved_grid_image}")
     gc.collect()
     os.remove(solved_grid_file_name)
     os.remove(solved_image_file_name)

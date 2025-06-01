@@ -680,13 +680,13 @@ def make_puzzle(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[i
 
     match difficulty:
         case 'HARD':
-            puzzle_grid = generate_puzzle_with_less_tiles(diff=0, maximum_desired_fullness=42, maximum_tries=7)
+            puzzle_grid = generate_puzzle_with_less_tiles(diff=0, maximum_desired_fullness=43, maximum_tries=5)
             print('Generating a new HARD puzzle')
         case 'EASY':
-            puzzle_grid = generate_puzzle_with_less_tiles(diff=2, maximum_desired_fullness=66, maximum_tries=6)
+            puzzle_grid = generate_puzzle_with_less_tiles(diff=2, maximum_desired_fullness=67, maximum_tries=5)
             print('Generating a new EASY puzzle')
         case _:
-            puzzle_grid = generate_puzzle_with_less_tiles(diff=1, maximum_desired_fullness=50, maximum_tries=5)
+            puzzle_grid = generate_puzzle_with_less_tiles(diff=1, maximum_desired_fullness=51, maximum_tries=5)
             print('Generating a new MEDIUM puzzle')
 
     gc.collect()
