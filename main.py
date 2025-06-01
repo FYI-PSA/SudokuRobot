@@ -123,8 +123,12 @@ async def start(update, context):
     print(f"User info:\n{user_profile}")
 
 
-async def notify_start(app, admin_id):
+async def notify_start(app, admin_id) -> None:
     await app.bot.send_message(chat_id=admin_id, text="The bot has started!")
+
+
+async def notify_end(app, admin_id) -> None:
+    await app.bot.send_message(chat_id=admin_id, text="The bot is shutting down.")
 
 
 async def help(update, context):
@@ -405,7 +409,9 @@ def main(bot_token, admin_id):
     event_loop.run_until_complete(notify_start(application, admin_id))
     application.run_polling()
 
-    print("Mainloooop... died... sigterm...")
+    print("Mainloooop... dying... sigterm...")
+    event_loop.run_until_complete(notify_end(application, admin_id))
+
     stop_listening = True
     sock_listener_thread.join()
     # return
