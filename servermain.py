@@ -511,6 +511,7 @@ def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: flo
             least_fullness = current_fullness
             least_full_found_grid = deepcopy(puzzle_grid)
         count += 1
+        gc.collect()
     print("Couldn't find a grid in target range within the try limit.")
     print(f"Best I could do is {100*least_fullness}% full.")
     return least_full_found_grid
