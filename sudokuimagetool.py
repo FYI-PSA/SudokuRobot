@@ -1,14 +1,17 @@
-import numpy as np
-from PIL import Image, ImageOps
-import cv2
+import gc
+import os
 from copy import deepcopy
 from typing import List, Tuple
+
+import cv2
+import numpy as np
+from PIL import Image, ImageOps
+
 # from matplotlib import pyplot as plt
 
-import gc
-
-import logging
-print = logging.info
+if os.name != "nt":
+    import logging
+    print = logging.info
 
 
 class Plot():
@@ -550,4 +553,5 @@ def main() -> None:
 
 
 if __name__ == '__main__':
+    print('Running as main!')
     main()

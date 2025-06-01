@@ -1,15 +1,14 @@
+import gc
 import os
 import sys
-from copy import deepcopy
 import time
 from collections import Counter
-import sudokuimagetool
-
+from copy import deepcopy
 from typing import List, Tuple
 
 import numpy as np
 
-import gc
+import sudokuimagetool
 
 if os.name != "nt":
     # When on Linux => Os.name not "nt" => Switch to logging instead of printing, particularly for deploying to servers.
@@ -682,10 +681,13 @@ def make_puzzle(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[i
     match difficulty:
         case 'HARD':
             puzzle_grid = generate_puzzle_with_less_tiles(diff=0, maximum_desired_fullness=42, maximum_tries=7)
+            print('Generating a new HARD puzzle')
         case 'EASY':
             puzzle_grid = generate_puzzle_with_less_tiles(diff=2, maximum_desired_fullness=66, maximum_tries=6)
+            print('Generating a new EASY puzzle')
         case _:
             puzzle_grid = generate_puzzle_with_less_tiles(diff=1, maximum_desired_fullness=50, maximum_tries=5)
+            print('Generating a new MEDIUM puzzle')
 
     gc.collect()
     puzzle_tiles = grid_to_list(puzzle_grid)
@@ -708,6 +710,8 @@ def test() -> None:  # type: ignore
     # pylint: disable=W0612
     # pylint: disable=C0103
     # pylint: disable=C0415
+
+    print('Testing!')
 
     TEST = 'PUZZLE'  # to test if the puzzle generation works
     # TEST = 'READ'  # to test if the image reading works
@@ -732,13 +736,17 @@ def test() -> None:  # type: ignore
             print("\n")
             print("Generated Puzzle:")
         case 'READ':
+            from tilereader import \
+                grayscale_numpy_tiles_list_to_predicted_integer_list as \
+                predict_function
             from tilereader import load_model
-            from tilereader import grayscale_numpy_tiles_list_to_predicted_integer_list as predict_function
             loaded_model = load_model()
             _main_grid = read_grid_picture_to_grid(loaded_model, 'screenshot.png', predict_function)
         case 'SERVER':
+            from tilereader import \
+                grayscale_numpy_tiles_list_to_predicted_integer_list as \
+                predict_function
             from tilereader import load_model
-            from tilereader import grayscale_numpy_tiles_list_to_predicted_integer_list as predict_function
             loaded_model = load_model()
             # successful as a boolean, name of solved grid file as a string, name of solved full image file as a string, completed or not grid as 9 lists of 9 numbers in a list, error message as a string, error name as a string, error line as an int
             test_results = servermain('screenshot.png', loaded_model, predict_function)

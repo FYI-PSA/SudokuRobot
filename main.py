@@ -1,19 +1,16 @@
 #  the more higher level stuff starts at line 70 ish
 import logging
 
-
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 print = logging.info
 
-
 import os
 import sys
 import subprocess
 import psutil
-
 
 print("NUCLEAR MODE. WILL KILL ANY OTHER RUNNING PYTHON INSTANCE.")
 me = os.getpid()
@@ -32,12 +29,10 @@ if len(pythons) > 1:
         print(f"An instance with {proc.pid} went down!")
         proc.kill()
 
-
 FILE = 'ONLY_ONE_PYTHON_LOCK'
 DIR = '~/'
 LOCK = os.path.expanduser(DIR)
 KEY = os.path.expanduser(DIR+FILE)
-
 
 if FILE in os.listdir(LOCK):  # this is now just left purely cosmetic
     print("Turns out an instance *was* indeed already running...")
@@ -45,7 +40,6 @@ if FILE in os.listdir(LOCK):  # this is now just left purely cosmetic
     sys.exit(55)  # Based on Microsoft Documentation, I don't know what else to make this based off.
 else:
     subprocess.call(['touch', KEY])
-
 
 import atexit
 
@@ -59,7 +53,6 @@ def exit_handler():
 
 
 atexit.register(exit_handler)
-
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
@@ -136,7 +129,7 @@ async def help(update, context):
     print(f"User info:\n{user_profile}")
 
 
-print('importing the heart of the project, including tensorflow...')
+print('importing the heart of the project, including keras, which will take a while...')
 import servermain
 from tilereader import grayscale_numpy_tiles_list_to_predicted_integer_list as predict_grayscale_func
 from tilereader import load_model
@@ -256,6 +249,7 @@ async def process_image(update, context):
 
 async def send_generated_modular(update, context, difficulty: str, first_response: str, caption: str):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=first_response, reply_to_message_id=update.message.message_id)
+    print('Sent message.')
     files = os.listdir()
     file_counter = 0
     file_name = f"puzzle_hard_{file_counter}.png"
@@ -264,6 +258,7 @@ async def send_generated_modular(update, context, difficulty: str, first_respons
         file_name = f"puzzle_hard_{file_counter}.png"
     with open(file_name, 'wb') as temp_write_file:
         temp_write_file.write(b'\x00')
+    gc.collect()
     result = servermain.make_puzzle(file_name, difficulty=difficulty)
     (
         puzzle_grid,
@@ -310,24 +305,27 @@ async def send_generated_modular(update, context, difficulty: str, first_respons
 
 
 async def send_hard_generated(update, context):
+    print('Entering send hard')
     first_response: str = "Generating and sending a difficult puzzle.\nThis process will take up to a minute or two..."
     caption: str = "Difficulty: **HARD**"
     difficulty: str = "HARD"
-    return await send_generated_modular(update=update, context=context, difficulty=difficulty, first_response=first_response, caption=caption)
+    await send_generated_modular(update=update, context=context, difficulty=difficulty, first_response=first_response, caption=caption)
 
 
 async def send_easy_generated(update, context):
+    print('Entering send easy')
     first_response: str = "Generating and sending an easy puzzle.\nThis process will take up to a minute or two..."
     caption: str = "Difficulty: **EASY**"
     difficulty: str = "EASY"
-    return await send_generated_modular(update=update, context=context, difficulty=difficulty, first_response=first_response, caption=caption)
+    await send_generated_modular(update=update, context=context, difficulty=difficulty, first_response=first_response, caption=caption)
 
 
 async def send_medium_generated(update, context):
+    print('Entering send medium')
     first_response: str = "Generating and sending a medium difficulty puzzle.\nThis process will take up to a minute or two..."
     caption: str = "Difficulty: **MEDIUM**"
     difficulty: str = "MEDIUM"
-    return await send_generated_modular(update=update, context=context, difficulty=difficulty, first_response=first_response, caption=caption)
+    await send_generated_modular(update=update, context=context, difficulty=difficulty, first_response=first_response, caption=caption)
 
 
 async def save_attachment_to_file(update, context) -> str:  # pylint: disable=W0613
