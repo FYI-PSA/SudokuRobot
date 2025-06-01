@@ -2,6 +2,7 @@ import gc
 import os
 import sys
 import time
+import threading
 from collections import Counter
 from copy import deepcopy
 from typing import List, Tuple
@@ -487,36 +488,66 @@ def generate_puzzle(diff: int = 0) -> List[List[int]]:
     return new_grid
 
 
-def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: float | int = 0.5, maximum_tries: int = 50, get_min: bool = True) -> List[List[int]]:
-    target_fullness = round(maximum_desired_fullness, 4)
+def puzzle_generator_function(diff: int, index: int, responses: List[Tuple[float, List[List[int]]] | None]):
+    puzzle_grid = generate_puzzle(diff)
+    puzzle_items = grid_to_list(puzzle_grid)
+    full_tile_count = 81 - puzzle_items.count(0)
+    current_fullness = round((full_tile_count / 81), 4)
+    result = (current_fullness, puzzle_grid)
+    responses[index] = deepcopy(result)
+
+
+def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: float | int = 0.5, minimum_desired_fullness: float | int = 0.0, maximum_tries: int = 50, get_min: bool = True) -> List[List[int]]:
+    target_max_fullness = round(maximum_desired_fullness, 4)
+    target_min_fullness = round(minimum_desired_fullness, 4)
     if maximum_desired_fullness >= 1:
-        digits: int = np.ceil(np.log10(target_fullness))
-        target_fullness = round((maximum_desired_fullness / pow(10, digits)), 4)
-    # print(target_fullness)
+        digits: int = np.ceil(np.log10(target_max_fullness))
+        target_max_fullness = round((maximum_desired_fullness / pow(10, digits)), 4)
+    if minimum_desired_fullness <= 1:
+        digits: int = np.ceil(np.log10(target_min_fullness))
+        target_min_fullness = round((minimum_desired_fullness / pow(10, digits)), 4)
+
+    assert maximum_desired_fullness > minimum_desired_fullness
+    # Maybe one day I'll replace this with a proper error, but I'm the only user so it's low priority
+
     least_fullness = 1.0
     least_full_found_grid = deepcopy(EMPTYGRID)
     most_fullness = 0.0
     most_full_found_grid = deepcopy(EMPTYGRID)
     count = 0
+
     while count < maximum_tries:
-        puzzle_grid = generate_puzzle(diff)
-        puzzle_items = grid_to_list(puzzle_grid)
-        empty_tile_count = puzzle_items.count(0)
-        full_tile_count = 81 - empty_tile_count
-        current_fullness = round((full_tile_count / 81), 4)
-        # print(f'current fullness percent:  {full_tile_count}/{81}  |  {round(current_fullness, 4) * 100}%')
-        # print(f'        maximum fullness:  {round(target_fullness, 4) * 100}%')
-        print(f' {count} :   {current_fullness*100}%   |?|   {target_fullness*100}%')
-        if current_fullness <= target_fullness:
-            return puzzle_grid
-        if (get_min) and (current_fullness < least_fullness):
-            least_fullness = current_fullness
-            least_full_found_grid = deepcopy(puzzle_grid)
-        if (not get_min) and (current_fullness > most_fullness):
-            most_fullness = current_fullness
-            most_full_found_grid = deepcopy(puzzle_grid)
+        thread_count: int = 7
+        responses: List[Tuple[float, List[List[int]]] | None] = [None] * thread_count
+        current_threads: List[threading.Thread] = [threading.Thread(name=f'generator_thread_{i}', target=puzzle_generator_function, args=(diff, i, responses)) for i in range(thread_count)]
+        for thread in current_threads:
+            thread.start()
+            # start them all and let them do their thing
+        for thread in current_threads:
+            thread.join()
+            # make the main thread wait for all of them to finish, but thankfully simultaneously
+        if any((item is None) for item in responses):
+            # I want to know ASAP if this doesn't work.
+            raise TypeError("???")
+
+        least_to_most: List[Tuple[float, List[List[int]]]] = sorted(responses, key=lambda pair: pair[0])  # type: ignore
+        current_least_fullness = least_to_most[0][0]
+        current_least_grid = least_to_most[0][1]
+        current_most_fullness = least_to_most[-1][0]
+        current_most_grid = least_to_most[-1][1]
+        for pair in least_to_most:
+            current_fullness = pair[0]
+            if target_min_fullness <= current_fullness <= target_max_fullness:
+                return deepcopy(pair[1])
+        if (get_min) and (current_least_fullness < least_fullness):
+            least_fullness = current_least_fullness
+            least_full_found_grid = deepcopy(current_least_grid)
+        if (not get_min) and (current_most_fullness > most_fullness):
+            most_fullness = current_most_fullness
+            most_full_found_grid = deepcopy(current_most_grid)
         count += 1
         gc.collect()
+
     print("Couldn't find a grid in target range within the try limit.")
     print(f"Lowest I could do is {100*least_fullness}% full.")
     print(f"Highest I could do is {100*most_fullness}% full.")
