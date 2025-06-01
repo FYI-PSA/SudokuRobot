@@ -110,7 +110,13 @@ def sock_listener(sock):
 
 
 async def start(update, context):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="Send me a screenshot or any other image of a Sudoku puzzle!")
+    text_block: str = (
+        "Send me a screenshot or any other image of a Sudoku puzzle and I will solve it for you.\n"
+        "You can use /generate_easy to create an easy difficulty Sudoku puzzle\n"
+        "You can use /generate_hard to create a hard difficulty Sudoku puzzle\n"
+        "You can use /generate to create a medium difficulty Sudoku puzzle\n"
+        )
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=text_block)
     print("Someone started the bot!")
     user = update.message.from_user
     user_profile = f'Name: {user.first_name} - {user.last_name}   |   Username: {user.username}   |   Id: {user.id}'
@@ -122,8 +128,17 @@ async def notify_start(app, admin_id):
 
 
 async def help(update, context):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="If the bot stops working, you should quickly visit\nhttps://sudokurobot.onrender.com/\nThen wait for around 1 minute and the bot will be working. (The page will reload when the bot stats working)")
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="Send me a screenshot or any other image of a Sudoku puzzle!")
+    help_text_block: str = (
+        "If the bot stops working, you should visit\n"
+        "https://sudokurobot.onrender.com/\n"
+        "Then wait for around 1 or 2 minutes and the bot will start working.\n"
+        "(The page will change when the bot starts, and it will inform you of that, no worries!)"
+        )
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=help_text_block)
+    use_start_text_block: str = (
+        "If you want to know how to use the bot, use /start"
+    )
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=use_start_text_block)
     user = update.message.from_user
     user_profile = f'Name: {user.first_name} - {user.last_name}   |   Username: {user.username}   |   Id: {user.id}'
     print(f"User info:\n{user_profile}")

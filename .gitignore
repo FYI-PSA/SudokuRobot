@@ -1,7 +1,8 @@
 # Extra
 python_is_correct.py
 *.png
-# I'm keep VSCode and CSpell for if I need to work on this project from other devices.
+.vscode/
+.cspell
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
