@@ -416,7 +416,9 @@ def main(bot_token, admin_id):
     application.run_polling()
 
     print("Mainloooop... dying... sigterm...")
+    event_loop = get_or_create_eventloop()
     event_loop.run_until_complete(notify_end(application, admin_id))
+    event_loop.stop()
 
     stop_listening = True
     sock_listener_thread.join()
