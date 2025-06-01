@@ -2,7 +2,9 @@
 python_is_correct.py
 *.png
 .vscode/
-.cspell
+.vscode/**
+.cspell/
+.cspell/**
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
