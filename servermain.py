@@ -516,8 +516,9 @@ def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: flo
     most_full_found_grid = deepcopy(EMPTYGRID)
     count = 0
 
+    thread_count: int = 3
+
     while count < maximum_tries:
-        thread_count: int = 7
         responses: List[Tuple[float, List[List[int]]] | None] = [None] * thread_count
         current_threads: List[threading.Thread] = [threading.Thread(name=f'generator_thread_{i}', target=puzzle_generator_function, args=(diff, i, responses)) for i in range(thread_count)]
         for thread in current_threads:
