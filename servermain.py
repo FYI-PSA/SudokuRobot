@@ -481,7 +481,7 @@ def generate_puzzle(diff: int = 0) -> List[List[int]]:
         if count > 1:
             middle += 1
 
-    middle = middle + diff
+    middle = max(0, min((middle + diff), 80))  # avoids if the index goes negative or goes above 80
     given_indices = indices[:middle+1]
     new_grid = back_to_grid([item if index in given_indices else 0 for index, item in enumerate(solved_grid)])
 
@@ -720,13 +720,31 @@ def make_puzzle(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[i
 
     match difficulty:
         case 'HARD':
-            puzzle_grid = generate_puzzle_with_less_tiles(diff=0, maximum_desired_fullness=44, maximum_tries=3, get_min=True)
+            puzzle_grid = generate_puzzle_with_less_tiles(
+                diff=0,
+                maximum_desired_fullness=0.4555,
+                minimum_desired_fullness=0.0,
+                maximum_tries=3,
+                get_min=True
+            )
             print('Generating a new HARD puzzle')
         case 'EASY':
-            puzzle_grid = generate_puzzle_with_less_tiles(diff=8, maximum_desired_fullness=77, maximum_tries=3, get_min=False)
+            puzzle_grid = generate_puzzle_with_less_tiles(
+                diff=8,
+                maximum_desired_fullness=0.77,
+                minimum_desired_fullness=0.59,
+                maximum_tries=3,
+                get_min=False
+            )
             print('Generating a new EASY puzzle')
         case _:
-            puzzle_grid = generate_puzzle_with_less_tiles(diff=4, maximum_desired_fullness=61.5, maximum_tries=3, get_min=False)
+            puzzle_grid = generate_puzzle_with_less_tiles(
+                diff=4,
+                maximum_desired_fullness=0.626,
+                minimum_desired_fullness=0.498,
+                maximum_tries=3,
+                get_min=False
+            )
             print('Generating a new MEDIUM puzzle')
 
     gc.collect()
