@@ -262,7 +262,7 @@ async def process_image(update, context):
         captiontext: str = "Solved!\nHere's the solved puzzle placed inside the original image, alongside a high quality image of only the solved grid."
     await context.bot.send_media_group(chat_id=update.effective_chat.id, media=mediagroup, caption=captiontext)
 
-    print(f"User: {update.message.from_user.username}   |   File name: {img_file_name}   |   Grid: {solved_grid_image}")
+    print(f"User: {update.message.from_user.username}   |   File name: {img_file_name}   |   Grid: {solved_grid}")
     gc.collect()
     os.remove(solved_grid_file_name)
     os.remove(solved_image_file_name)
