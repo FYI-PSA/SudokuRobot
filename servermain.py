@@ -13,7 +13,31 @@ import numpy as np
 
 import sudokuimagetool
 
-print = logging.info
+logging_format: str = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+logging.basicConfig(
+    format=logging_format,
+    level=logging.INFO
+)
+
+formatter = logging.Formatter(logging_format)
+
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+
+stdout_handler = logging.StreamHandler(sys.stdout)
+stdout_handler.setLevel(logging.INFO)
+stdout_handler.setFormatter(formatter)
+root_logger.addHandler(stdout_handler)
+
+
+def proper_logging(info) -> None:
+    logging.info(info)
+    for handler in logging.getLogger().handlers:
+        handler.flush()
+
+
+print = proper_logging
 
 
 def get_file_name_info(file_name: str) -> Tuple[str, str]:

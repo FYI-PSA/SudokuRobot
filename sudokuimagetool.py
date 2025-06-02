@@ -1,5 +1,6 @@
 import gc
 import logging
+import sys
 from copy import deepcopy
 from typing import List, Tuple
 
@@ -9,7 +10,31 @@ from PIL import Image, ImageOps
 
 # from matplotlib import pyplot as plt
 
-print = logging.info
+logging_format: str = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+logging.basicConfig(
+    format=logging_format,
+    level=logging.INFO
+)
+
+formatter = logging.Formatter(logging_format)
+
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+
+stdout_handler = logging.StreamHandler(sys.stdout)
+stdout_handler.setLevel(logging.INFO)
+stdout_handler.setFormatter(formatter)
+root_logger.addHandler(stdout_handler)
+
+
+def proper_logging(info) -> None:
+    logging.info(info)
+    for handler in logging.getLogger().handlers:
+        handler.flush()
+
+
+print = proper_logging
 
 
 class Plot():

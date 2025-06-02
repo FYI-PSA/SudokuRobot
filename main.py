@@ -1,14 +1,34 @@
 #  the more higher level stuff starts at line 70 ish
 import logging
+import sys
+
+logging_format: str = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format=logging_format,
     level=logging.INFO
 )
-print = logging.info
+
+formatter = logging.Formatter(logging_format)
+
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+
+stdout_handler = logging.StreamHandler(sys.stdout)
+stdout_handler.setLevel(logging.INFO)
+stdout_handler.setFormatter(formatter)
+root_logger.addHandler(stdout_handler)
+
+
+def proper_logging(info) -> None:
+    logging.info(info)
+    for handler in logging.getLogger().handlers:
+        handler.flush()
+
+
+print = proper_logging
 
 import os
-import sys
 import subprocess
 import psutil
 
@@ -283,6 +303,7 @@ async def send_generated_modular(update, context, difficulty: str, first_respons
     with open(file_name, 'wb') as temp_write_file:
         temp_write_file.write(b'\x00')
     gc.collect()
+    print('Entering make_puzzle')
     result = servermain.make_puzzle(file_name, difficulty=difficulty)
     (
         puzzle_grid,
