@@ -159,12 +159,14 @@ print('ai model loaded.')
 def get_or_create_eventloop():
     try:
         print("Creating new event loop...")
-        return asyncio.get_event_loop()
+        current_loop = asyncio.get_event_loop()
+        return current_loop
     except RuntimeError:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         print("Set existing event loop")
-        return asyncio.get_event_loop()
+        current_loop = asyncio.get_event_loop()
+        return current_loop
 
 
 async def respond_messages(update, context):
@@ -456,5 +458,6 @@ if __name__ == '__main__':
         sys.exit(0)
     except Exception as e:
         print("Generic exception? I don't know how to handle that.")
-        print(e)
+        print(f"Error type name: {type(e).__name__}")
+        print(f"Error message  : {str(e)}")
         sys.exit(1)
