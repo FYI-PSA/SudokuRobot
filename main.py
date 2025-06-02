@@ -62,13 +62,21 @@ FILE = 'ONLY_ONE_PYTHON_LOCK'
 DIR = '~/'
 LOCK = os.path.expanduser(DIR)
 KEY = os.path.expanduser(DIR+FILE)
+if os.name == 'nt':
+    LOCK = '\\'.join(LOCK.split('/'))
+    KEY = '\\'.join(KEY.split('/'))
+else:
+    LOCK = '/'.join(LOCK.split('\\'))
+    KEY = '/'.join(KEY.split('\\'))
 
-if FILE in os.listdir(LOCK):  # this is now just left purely cosmetic
+if FILE in os.listdir(LOCK):
     print("Turns out an instance *was* indeed already running...")
     os.remove(KEY)
     sys.exit(55)  # Based on Microsoft Documentation, I don't know what else to make this based off.
 else:
-    subprocess.call(['touch', KEY])
+    key_file = open(KEY, 'wb')
+    key_file.write(b'\x00')
+    key_file.close()
 
 import atexit
 
