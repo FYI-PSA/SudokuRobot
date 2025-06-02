@@ -417,8 +417,9 @@ async def bot_handle_end_signal(app, admin_id) -> None:
 
 
 def register_signal_handler(app, admin_id) -> None:
-    def end_signal_handler(signal_number, frame) -> None:
-        asyncio.run(bot_handle_end_signal(app, admin_id))
+    def end_signal_handler(_signal_number, _frame) -> None:
+        event_loop = get_or_create_eventloop()
+        event_loop.run_until_complete(bot_handle_end_signal(app, admin_id))
 
     signal.signal(signal.SIGTERM, end_signal_handler)
     signal.signal(signal.SIGINT, end_signal_handler)
@@ -430,7 +431,6 @@ async def notify_start(app, admin_id) -> None:
 
 async def notify_end(app, admin_id) -> None:
     await app.bot.send_message(chat_id=admin_id, text="The bot is shutting down.")
-
 
 
 def main(bot_token, admin_id):
@@ -469,14 +469,14 @@ def main(bot_token, admin_id):
 
     application.add_error_handler(error_handler)
 
-    # event_loop.run_until_complete(notify_start(application, admin_id))
+    event_loop = get_or_create_eventloop()
 
     register_signal_handler(application, admin_id)
-    asyncio.run(notify_start(application, admin_id))
+    event_loop.run_until_complete(notify_start(application, admin_id))
 
     print("Informed admin of start.")
     print("Set up graceful exit for sigterm")
-    
+
     application.run_polling()
 
     print("Mainloooop... dying... sigterm...")
