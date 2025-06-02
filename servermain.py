@@ -1,4 +1,4 @@
-# import asyncio
+import asyncio
 import gc
 import logging
 import os
@@ -547,6 +547,7 @@ def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: flo
     thread_count: int = 7
 
     while count < maximum_tries:
+        print(f"Turn {count+1} in attempts...")
         done_threads: int = 0
         responses: List[Tuple[float, List[List[int]]] | None] = [None] * thread_count
         current_threads: List[threading.Thread] = [threading.Thread(name=f'generator_thread_{i}', target=puzzle_generator_function, args=(diff, i, responses)) for i in range(thread_count)]
@@ -737,8 +738,45 @@ def servermain(filename, ai_model, predict_grayscale_func) -> Tuple[bool, str, s
     # successful as a boolean, name of solved grid file as a string, name of solved full image file as a string, completed or not grid as 9 lists of 9 numbers in a list, error message as a string, error name as a string, error line as an int
 
 
-def make_puzzle(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
+def get_or_create_eventloop() -> asyncio.AbstractEventLoop:
+    try:
+        print("Creating new event loop...")
+        current_loop = asyncio.get_event_loop()
+        return current_loop
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        print("Set existing event loop")
+        current_loop = asyncio.get_event_loop()
+        return current_loop
+
+
+async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> asyncio.Future[Tuple[List[List[int]], str, str | None, str | None, int | None]]:
     """Generates a sudoku puzzle image based on the difficulty and saves it to your `file_name`
+    This function is non blocking, it takes a few minutes to finish, and you can use it asynchronously.
+
+    Args:
+        file_name (str): The full name (including extension) of the file you want the image to be saved as
+        (optional) difficulty (str): The difficulty of the puzzle (Must be: `HARD`, `MED`/`MEDIUM`, `EASY`)
+            \n (Defaults to `MEDIUM` if not provided or incorrectly provided)
+
+    Return:
+        A Future of a Tuple of the following in the same order:\n
+        - Puzzle Grid  as  List[List[int]]
+        - Puzzle Image File Name  as  str
+        - Possible Error Message  as  str or None
+        - Possible Error Name  as  str or None
+        - Possible Error Line  as  int or None
+    """
+    event_loop: asyncio.AbstractEventLoop = get_or_create_eventloop()
+    result = event_loop.run_in_executor(None, make_puzzle_blocking, file_name, difficulty)
+    return result
+
+
+
+def make_puzzle_blocking(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
+    """Generates a sudoku puzzle image based on the difficulty and saves it to your `file_name`
+    This function is blocking, meaning the rest of your code won't progress until it's done, which takes a few minutes.
 
     Args:
         file_name (str): The full name (including extension) of the file you want the image to be saved as

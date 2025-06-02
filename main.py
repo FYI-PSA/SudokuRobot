@@ -194,7 +194,7 @@ AImodel = load_model()
 print('ai model loaded.')
 
 
-def get_or_create_eventloop():
+def get_or_create_eventloop() -> asyncio.AbstractEventLoop:
     try:
         print("Creating new event loop...")
         current_loop = asyncio.get_event_loop()
@@ -322,7 +322,7 @@ async def send_generated_modular(update, context, difficulty: str, first_respons
         temp_write_file.write(b'\x00')
     gc.collect()
     print('Entering make_puzzle')
-    result = servermain.make_puzzle(file_name, difficulty=difficulty)
+    result = await servermain.make_puzzle_async(file_name, difficulty=difficulty)
     (
         puzzle_grid,
         puzzle_file_name,
