@@ -6,6 +6,7 @@ import sys
 import threading
 import time
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from typing import List, Tuple
 
@@ -526,7 +527,7 @@ def puzzle_generator_function(diff: int, index: int, responses: List[Tuple[float
     done_flags[index].set()
 
 
-def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: float | int = 0.5, minimum_desired_fullness: float | int = 0.001, maximum_tries: int = 50, get_min: bool = True) -> List[List[int]]:
+def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: float | int = 0.5, minimum_desired_fullness: float | int = 0.001, maximum_tries: int = 5, get_min: bool = True) -> List[List[int]]:
     target_max_fullness = round(maximum_desired_fullness, 4)
     target_min_fullness = round(minimum_desired_fullness, 4)
     if maximum_desired_fullness >= 1:
@@ -545,13 +546,14 @@ def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: flo
     most_full_found_grid = deepcopy(EMPTYGRID)
     count = 0
 
-    thread_count: int = 7
+    thread_count: int = 3
 
     while count < maximum_tries:
-        print(f"Turn {count+1} of {thread_count} attempts...")
+        print(f"Turn {count+1} of {maximum_tries} attempts...")
 
         responses: List[Tuple[float, List[List[int]]] | None] = [None] * thread_count
         done_flags: List[threading.Event] = [threading.Event() for i in range(thread_count)]
+
         current_threads: List[threading.Thread] = [threading.Thread(name=f'generator_thread_{i}', target=puzzle_generator_function, args=(diff, i, responses, done_flags)) for i in range(thread_count)]
         for thread in current_threads:
             thread.start()
@@ -767,8 +769,9 @@ async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> Tuple
         - Possible Error Line  as  int or None
     """
     event_loop: asyncio.AbstractEventLoop = get_or_create_eventloop()
-    result = await event_loop.run_in_executor(None, make_puzzle_blocking, file_name, difficulty)
-    return result
+    with ThreadPoolExecutor() as executor:
+        result = event_loop.run_in_executor(executor, make_puzzle_blocking, file_name, difficulty)
+        return await result
 
 
 def make_puzzle_blocking(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
