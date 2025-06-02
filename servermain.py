@@ -516,13 +516,14 @@ def generate_puzzle(diff: int = 0) -> List[List[int]]:
     return new_grid
 
 
-def puzzle_generator_function(diff: int, index: int, responses: List[Tuple[float, List[List[int]]] | None]):
+def puzzle_generator_function(diff: int, index: int, responses: List[Tuple[float, List[List[int]]] | None], done_flags: List[threading.Event]):
     puzzle_grid = generate_puzzle(diff)
     puzzle_items = grid_to_list(puzzle_grid)
     full_tile_count = 81 - puzzle_items.count(0)
     current_fullness = round((full_tile_count / 81), 4)
     result = (current_fullness, puzzle_grid)
     responses[index] = deepcopy(result)
+    done_flags[index].set()
 
 
 def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: float | int = 0.5, minimum_desired_fullness: float | int = 0.001, maximum_tries: int = 50, get_min: bool = True) -> List[List[int]]:
@@ -547,21 +548,18 @@ def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: flo
     thread_count: int = 7
 
     while count < maximum_tries:
-        print(f"Turn {count+1} in attempts...")
-        done_threads: int = 0
+        print(f"Turn {count+1} of {thread_count} attempts...")
+
         responses: List[Tuple[float, List[List[int]]] | None] = [None] * thread_count
-        current_threads: List[threading.Thread] = [threading.Thread(name=f'generator_thread_{i}', target=puzzle_generator_function, args=(diff, i, responses)) for i in range(thread_count)]
+        done_flags: List[threading.Event] = [threading.Event() for i in range(thread_count)]
+        current_threads: List[threading.Thread] = [threading.Thread(name=f'generator_thread_{i}', target=puzzle_generator_function, args=(diff, i, responses, done_flags)) for i in range(thread_count)]
         for thread in current_threads:
             thread.start()
             # start them all and let them do their thing
-        while done_threads != thread_count:
-            # thread.join()
-            # THIS IS STOPPING EVERYTHING
-            done_threads = thread_count - responses.count(None)
-            time.sleep(7.5)
-            done_threads_waited = thread_count - responses.count(None)
-            if done_threads_waited > done_threads:
-                print(responses)
+        for event in done_flags:
+            event.wait()
+            print(responses)
+            # wait for them to finish without sleeping
         st = time.time()
         print("This should be instant")
         for thread in current_threads:
