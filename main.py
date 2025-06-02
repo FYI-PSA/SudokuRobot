@@ -416,8 +416,8 @@ async def bot_handle_end_signal(app, admin_id) -> None:
     await app.shutdown()
 
 
-def register_signal_handler(app, admin_id):
-    def end_signal_handler(signal_number, frame):
+def register_signal_handler(app, admin_id) -> None:
+    def end_signal_handler(signal_number, frame) -> None:
         asyncio.run(bot_handle_end_signal(app, admin_id))
 
     signal.signal(signal.SIGTERM, end_signal_handler)
