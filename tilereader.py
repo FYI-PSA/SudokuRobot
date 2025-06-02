@@ -1,8 +1,10 @@
 import os
 
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"  # more precise floating point calculations, more precise model output
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # disables warnings and debugging information (it's fine) but still gives errors
+# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "1"  # WARNING and ERROR messages still show up, but not INFO.
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"  # NOTHING is logged.
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 import numpy as np
 from keras import models as keras_models
 

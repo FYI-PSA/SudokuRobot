@@ -38,7 +38,7 @@ print = proper_logging
 
 
 import os
-import signal
+import gc
 import psutil
 
 print("NUCLEAR MODE. WILL KILL ANY OTHER RUNNING PYTHON INSTANCE.")
@@ -74,9 +74,11 @@ if FILE in os.listdir(LOCK):
     os.remove(KEY)
     sys.exit(55)  # Based on Microsoft Documentation, I don't know what else to make this based off.
 else:
-    key_file = open(KEY, 'wb')
+    key_file = open(KEY, 'wb')  # pylint: disable=R1732
     key_file.write(b'\x00')
     key_file.close()
+
+gc.collect()
 
 import atexit
 
@@ -95,16 +97,18 @@ atexit.register(exit_handler)
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 print('importing the important stuff')
+
+import asyncio
+# import requests
+import signal
 import socket
 import threading
-# import requests
 import time
-import asyncio
+
 from http import HTTPStatus
 from telegram import InputMediaPhoto
 from telegram.error import Conflict
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
-import gc
 
 
 def bind_port():

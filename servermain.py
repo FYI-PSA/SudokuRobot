@@ -751,7 +751,7 @@ def get_or_create_eventloop() -> asyncio.AbstractEventLoop:
         return current_loop
 
 
-async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> asyncio.Future[Tuple[List[List[int]], str, str | None, str | None, int | None]]:
+async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
     """Generates a sudoku puzzle image based on the difficulty and saves it to your `file_name`
     This function is non blocking, it takes a few minutes to finish, and you can use it asynchronously.
 
@@ -761,7 +761,7 @@ async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> async
             \n (Defaults to `MEDIUM` if not provided or incorrectly provided)
 
     Return:
-        A Future of a Tuple of the following in the same order:\n
+        A Tuple of the following in the same order:\n
         - Puzzle Grid  as  List[List[int]]
         - Puzzle Image File Name  as  str
         - Possible Error Message  as  str or None
@@ -769,9 +769,8 @@ async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> async
         - Possible Error Line  as  int or None
     """
     event_loop: asyncio.AbstractEventLoop = get_or_create_eventloop()
-    result = event_loop.run_in_executor(None, make_puzzle_blocking, file_name, difficulty)
+    result = await event_loop.run_in_executor(None, make_puzzle_blocking, file_name, difficulty)
     return result
-
 
 
 def make_puzzle_blocking(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
