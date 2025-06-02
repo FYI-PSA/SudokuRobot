@@ -181,7 +181,7 @@ async def process_image(update, context):
     print("Brb...")
 
     img_file_name = await save_attachment_to_file(update, context)
-    time.sleep(1)
+    await asyncio.sleep(1)
     img_file_name = str(img_file_name)
     print(f"Saved the file as {img_file_name}")
     response_tuple = servermain.servermain(
@@ -364,7 +364,7 @@ async def error_handler(update, context):  # pylint: disable=W0613
     # print(f"You sneaky moron! Stop trying to error!")
     if isinstance(err, Conflict):
         print("Conflict happening. Peace time!\n")
-        time.sleep(10)
+        await asyncio.sleep(7.5)
         print("Is the conflict persisting after this?\n")
     else:
         logging.info('\n\n')
@@ -379,7 +379,8 @@ async def error_handler(update, context):  # pylint: disable=W0613
 
 def main(bot_token, admin_id):
     global stop_listening
-    time.sleep(0.1)
+    time.sleep(0.5)
+    print("Main is now working!")
 
     sock = bind_port()
     sock_listener_thread = threading.Thread(target=sock_listener, args=(sock, ))

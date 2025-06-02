@@ -1,8 +1,10 @@
+# import asyncio
 import gc
+import logging
 import os
 import sys
-import time
 import threading
+import time
 from collections import Counter
 from copy import deepcopy
 from typing import List, Tuple
@@ -11,11 +13,7 @@ import numpy as np
 
 import sudokuimagetool
 
-if os.name != "nt":
-    # When on Linux => Os.name not "nt" => Switch to logging instead of printing, particularly for deploying to servers.
-    # When on Windows => Os.name = "nt" => Only print
-    import logging
-    print = logging.info
+print = logging.info
 
 
 def get_file_name_info(file_name: str) -> Tuple[str, str]:
@@ -518,14 +516,27 @@ def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: flo
 
     while count < maximum_tries:
         thread_count: int = 7
+        done_threads: int = 0
         responses: List[Tuple[float, List[List[int]]] | None] = [None] * thread_count
         current_threads: List[threading.Thread] = [threading.Thread(name=f'generator_thread_{i}', target=puzzle_generator_function, args=(diff, i, responses)) for i in range(thread_count)]
         for thread in current_threads:
             thread.start()
             # start them all and let them do their thing
+        while done_threads != thread_count:
+            # thread.join()
+            # THIS IS STOPPING EVERYTHING
+            done_threads = thread_count - responses.count(None)
+            time.sleep(7.5)
+            done_threads_waited = thread_count - responses.count(None)
+            if done_threads_waited > done_threads:
+                print(responses)
+        st = time.time()
+        print("This should be instant")
         for thread in current_threads:
             thread.join()
-            # make the main thread wait for all of them to finish, but thankfully simultaneously
+        et = time.time()
+        dt = round((et - st), 5)
+        print(f"It took {dt} seconds.")
         if any((item is None) for item in responses):
             # I want to know ASAP if this doesn't work.
             raise TypeError("???")

@@ -1,5 +1,5 @@
 import gc
-import os
+import logging
 from copy import deepcopy
 from typing import List, Tuple
 
@@ -9,9 +9,7 @@ from PIL import Image, ImageOps
 
 # from matplotlib import pyplot as plt
 
-if os.name != "nt":
-    import logging
-    print = logging.info
+print = logging.info
 
 
 class Plot():
@@ -261,7 +259,7 @@ def remove_border_pixels(grayscale_image: np.ndarray, margin_percent: float = 4.
 
 def resize_tile(grayscale_tile: np.ndarray) -> np.ndarray:
     tile = Image.fromarray(grayscale_tile, mode='L')
-    tiny_tile = tile.resize((28, 28), Image.LANCZOS)
+    tiny_tile = tile.resize((28, 28), Image.Resampling.LANCZOS)
     return np.asarray(tiny_tile, dtype=np.uint8)
 
 
@@ -438,7 +436,7 @@ def generate_grid(tiles: List[int], size: tuple, mostly_black: bool = False) -> 
         # new_tile = ImageOps.expand(new_tile, border=border_thick, fill='black')
         new_tile = ImageOps.expand(new_tile, border=border_thick, fill=(0, 0, 0))  # type: ignore
 
-        new_tile = new_tile.resize((side, side), Image.LANCZOS)
+        new_tile = new_tile.resize((side, side), Image.Resampling.LANCZOS)
 
         image.paste(new_tile, (col*side, row*side))
 
@@ -452,7 +450,7 @@ def generate_grid(tiles: List[int], size: tuple, mostly_black: bool = False) -> 
 
     # image = ImageOps.expand(image, border=thicker_edge, fill='black')
     image = ImageOps.expand(image, border=thicker_edge, fill=(0, 0, 0))  # type: ignore
-    image = image.resize(size, Image.LANCZOS)
+    image = image.resize(size, Image.Resampling.LANCZOS)
     if mostly_black:
         image = ImageOps.invert(image)
     return image
@@ -521,7 +519,7 @@ def write_solved_grid_to_image(new_file_name: str, filename: str, tile_list: Lis
 def write_solved_grid_to_original_image(new_file_name: str, largest_square: tuple, solved_grid: Image.Image, org_rgb_image: Image.Image, mostly_black):
     x, y, w, h = largest_square
 
-    solved_grid = solved_grid.resize((w, h), Image.LANCZOS)
+    solved_grid = solved_grid.resize((w, h), Image.Resampling.LANCZOS)
 
     if mostly_black:
         solved_grid = ImageOps.invert(solved_grid)
