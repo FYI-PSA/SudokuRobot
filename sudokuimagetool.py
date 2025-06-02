@@ -22,16 +22,22 @@ formatter = logging.Formatter(logging_format)
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
 
-stdout_handler = logging.StreamHandler(sys.stdout)
-stdout_handler.setLevel(logging.INFO)
-stdout_handler.setFormatter(formatter)
-root_logger.addHandler(stdout_handler)
+# if for some reason it doesn't work with stdout
+# uncomment this:
+
+# stdout_handler = logging.StreamHandler(sys.stdout)
+# stdout_handler.setLevel(logging.INFO)
+# stdout_handler.setFormatter(formatter)
+# root_logger.addHandler(stdout_handler)
 
 
 def proper_logging(info) -> None:
     logging.info(info)
-    for handler in logging.getLogger().handlers:
-        handler.flush()
+    logging.getLogger().handlers[0].flush()
+    # I KNOW THIS IS BAD
+    # BUT IT FLUSHES LATE, AND THAT'S ANNOYING.
+    # for handler in logging.getLogger().handlers:
+    #     handler.flush()
 
 
 print = proper_logging
