@@ -414,11 +414,13 @@ def main(bot_token, admin_id):
     application.add_error_handler(error_handler)
 
     event_loop.run_until_complete(notify_start(application, admin_id))
+    print("Informed admin of start.")
     application.run_polling()
 
     print("Mainloooop... dying... sigterm...")
     event_loop = get_or_create_eventloop()
     event_loop.run_until_complete(notify_end(application, admin_id))
+    print("Informed admin of shutdown.")
     event_loop.stop()
 
     stop_listening = True
