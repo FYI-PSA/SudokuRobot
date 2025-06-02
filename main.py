@@ -38,7 +38,7 @@ print = proper_logging
 
 
 import os
-import subprocess
+import signal
 import psutil
 
 print("NUCLEAR MODE. WILL KILL ANY OTHER RUNNING PYTHON INSTANCE.")
@@ -161,14 +161,6 @@ async def start(update, context):
     print(f"User info:\n{user_profile}")
 
 
-async def notify_start(app, admin_id) -> None:
-    await app.bot.send_message(chat_id=admin_id, text="The bot has started!")
-
-
-async def notify_end(app, admin_id) -> None:
-    await app.bot.send_message(chat_id=admin_id, text="The bot is shutting down.")
-
-
 async def help(update, context):
     help_text_block: str = (
         "If the bot stops working, you should visit\n"
@@ -192,19 +184,6 @@ from tilereader import grayscale_numpy_tiles_list_to_predicted_integer_list as p
 from tilereader import load_model
 AImodel = load_model()
 print('ai model loaded.')
-
-
-def get_or_create_eventloop() -> asyncio.AbstractEventLoop:
-    try:
-        print("Creating new event loop...")
-        current_loop = asyncio.get_event_loop()
-        return current_loop
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        print("Set existing event loop")
-        current_loop = asyncio.get_event_loop()
-        return current_loop
 
 
 async def respond_messages(update, context):
@@ -418,6 +397,42 @@ async def error_handler(update, context):  # pylint: disable=W0613
         print('\n\n')
 
 
+def get_or_create_eventloop() -> asyncio.AbstractEventLoop:
+    try:
+        print("Creating new event loop...")
+        current_loop = asyncio.get_event_loop()
+        return current_loop
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        print("Set existing event loop")
+        current_loop = asyncio.get_event_loop()
+        return current_loop
+
+
+async def bot_handle_end_signal(app, admin_id) -> None:
+    logging.info("Received SIGTERM, performing cleanup...")
+    await notify_end(app, admin_id)
+    await app.shutdown()
+
+
+def register_signal_handler(app, admin_id):
+    def end_signal_handler(signal_number, frame):
+        asyncio.run(bot_handle_end_signal(app, admin_id))
+
+    signal.signal(signal.SIGTERM, end_signal_handler)
+    signal.signal(signal.SIGINT, end_signal_handler)
+
+
+async def notify_start(app, admin_id) -> None:
+    await app.bot.send_message(chat_id=admin_id, text="The bot has started!")
+
+
+async def notify_end(app, admin_id) -> None:
+    await app.bot.send_message(chat_id=admin_id, text="The bot is shutting down.")
+
+
+
 def main(bot_token, admin_id):
     global stop_listening
     time.sleep(0.5)
@@ -454,16 +469,24 @@ def main(bot_token, admin_id):
 
     application.add_error_handler(error_handler)
 
-    event_loop.run_until_complete(notify_start(application, admin_id))
+    # event_loop.run_until_complete(notify_start(application, admin_id))
+
+    register_signal_handler(application, admin_id)
+    asyncio.run(notify_start(application, admin_id))
+
     print("Informed admin of start.")
+    print("Set up graceful exit for sigterm")
+    
     application.run_polling()
 
     print("Mainloooop... dying... sigterm...")
-    event_loop = get_or_create_eventloop()
-    event_loop.run_until_complete(notify_end(application, admin_id))
-    print("Informed admin of shutdown.")
-    event_loop.stop()
-
+    # event_loop = get_or_create_eventloop()
+    # event_loop.run_until_complete(notify_end(application, admin_id))
+    print("Hopefully informed admin of shutdown.")
+    try:
+        event_loop.stop()
+    except RuntimeError:
+        pass
     stop_listening = True
     sock_listener_thread.join()
     # return
