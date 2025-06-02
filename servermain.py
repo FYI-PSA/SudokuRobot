@@ -495,13 +495,13 @@ def puzzle_generator_function(diff: int, index: int, responses: List[Tuple[float
     responses[index] = deepcopy(result)
 
 
-def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: float | int = 0.5, minimum_desired_fullness: float | int = 0.0, maximum_tries: int = 50, get_min: bool = True) -> List[List[int]]:
+def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: float | int = 0.5, minimum_desired_fullness: float | int = 0.001, maximum_tries: int = 50, get_min: bool = True) -> List[List[int]]:
     target_max_fullness = round(maximum_desired_fullness, 4)
     target_min_fullness = round(minimum_desired_fullness, 4)
     if maximum_desired_fullness >= 1:
         digits: int = np.ceil(np.log10(target_max_fullness))
         target_max_fullness = round((maximum_desired_fullness / pow(10, digits)), 4)
-    if minimum_desired_fullness <= 1:
+    if minimum_desired_fullness >= 1:
         digits: int = np.ceil(np.log10(target_min_fullness))
         target_min_fullness = round((minimum_desired_fullness / pow(10, digits)), 4)
 
@@ -514,8 +514,9 @@ def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: flo
     most_full_found_grid = deepcopy(EMPTYGRID)
     count = 0
 
+    thread_count: int = 7
+
     while count < maximum_tries:
-        thread_count: int = 7
         done_threads: int = 0
         responses: List[Tuple[float, List[List[int]]] | None] = [None] * thread_count
         current_threads: List[threading.Thread] = [threading.Thread(name=f'generator_thread_{i}', target=puzzle_generator_function, args=(diff, i, responses)) for i in range(thread_count)]
