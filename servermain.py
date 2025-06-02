@@ -462,7 +462,7 @@ def generate_puzzle(diff: int = 0) -> List[List[int]]:
         print(f"The code failed due to bad inspection: {e}")
         return EMPTYGRID
     except Exception as e:
-        print("Generic exception while generating puzzle? That's strange.")
+        print("Generic exception WHILE generating puzzle? That's strange.")
         raise e
 
     assert (count > 0)  # otherwise the above exception would be raised
@@ -685,15 +685,17 @@ def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: flo
     most_full_found_grid = deepcopy(EMPTYGRID)
     count = 0
 
-    thread_count: int = 3
+    thread_count: int = 2
 
     while count < maximum_tries:
         print(f"Turn {count+1} of {maximum_tries} attempts...")
+        st = time.time()
 
         responses: List[Tuple[float, List[List[int]]] | None] = [None] * thread_count
-        done_flags: List[threading.Event] = [threading.Event() for i in range(thread_count)]
+        done_flags: List[threading.Event] = [threading.Event()] * thread_count
 
         current_threads: List[threading.Thread] = [threading.Thread(name=f'generator_thread_{i}', target=puzzle_generator_function, args=(diff, i, responses, done_flags)) for i in range(thread_count)]
+
         for thread in current_threads:
             thread.start()
             # start them all and let them do their thing
@@ -701,15 +703,17 @@ def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: flo
             event.wait()
             print(responses)
             # wait for them to finish without sleeping
-        st = time.time()
-        print("This should be instant")
+        # print("This should be instant")
         for thread in current_threads:
             thread.join()
+
         et = time.time()
-        dt = round((et - st), 5)
+        dt = round((et - st), 3)
         print(f"It took {dt} seconds.")
+
         if any((item is None) for item in responses):
             # I want to know ASAP if this doesn't work.
+            print("One of them didn't even work")
             raise TypeError("???")
 
         least_to_most: List[Tuple[float, List[List[int]]]] = sorted(responses, key=lambda pair: pair[0])  # type: ignore
@@ -720,6 +724,7 @@ def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: flo
         for pair in least_to_most:
             current_fullness = pair[0]
             if target_min_fullness <= current_fullness <= target_max_fullness:
+                print('It was sufficient')
                 return deepcopy(pair[1])
         if (get_min) and (current_least_fullness < least_fullness):
             least_fullness = current_least_fullness
@@ -768,6 +773,11 @@ async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> Tuple
         - Possible Error Name  as  str or None
         - Possible Error Line  as  int or None
     """
+
+    # TODO: THIS WHOLE THING CAN BE SPED UP A LOT
+    # JUST HAVE TO IMPLEMENT THE FULLNESS RESTRICTIONS AS PART OF GENERATE_PUZZLE INSTEAD OF LESS_TILES
+    # BECAUSE THEN ITS PART OF COND
+
     event_loop: asyncio.AbstractEventLoop = get_or_create_eventloop()
     with ThreadPoolExecutor() as executor:
         result = event_loop.run_in_executor(executor, make_puzzle_blocking, file_name, difficulty)
