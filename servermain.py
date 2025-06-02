@@ -517,88 +517,6 @@ def generate_puzzle(diff: int = 0) -> List[List[int]]:
     return new_grid
 
 
-def puzzle_generator_function(diff: int, index: int, responses: List[Tuple[float, List[List[int]]] | None], done_flags: List[threading.Event]):
-    puzzle_grid = generate_puzzle(diff)
-    puzzle_items = grid_to_list(puzzle_grid)
-    full_tile_count = 81 - puzzle_items.count(0)
-    current_fullness = round((full_tile_count / 81), 4)
-    result = (current_fullness, puzzle_grid)
-    responses[index] = deepcopy(result)
-    done_flags[index].set()
-
-
-def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: float | int = 0.5, minimum_desired_fullness: float | int = 0.001, maximum_tries: int = 5, get_min: bool = True) -> List[List[int]]:
-    target_max_fullness = round(maximum_desired_fullness, 4)
-    target_min_fullness = round(minimum_desired_fullness, 4)
-    if maximum_desired_fullness >= 1:
-        digits: int = np.ceil(np.log10(target_max_fullness))
-        target_max_fullness = round((maximum_desired_fullness / pow(10, digits)), 4)
-    if minimum_desired_fullness >= 1:
-        digits: int = np.ceil(np.log10(target_min_fullness))
-        target_min_fullness = round((minimum_desired_fullness / pow(10, digits)), 4)
-
-    assert maximum_desired_fullness > minimum_desired_fullness
-    # Maybe one day I'll replace this with a proper error, but I'm the only user so it's low priority
-
-    least_fullness = 1.0
-    least_full_found_grid = deepcopy(EMPTYGRID)
-    most_fullness = 0.0
-    most_full_found_grid = deepcopy(EMPTYGRID)
-    count = 0
-
-    thread_count: int = 3
-
-    while count < maximum_tries:
-        print(f"Turn {count+1} of {maximum_tries} attempts...")
-
-        responses: List[Tuple[float, List[List[int]]] | None] = [None] * thread_count
-        done_flags: List[threading.Event] = [threading.Event() for i in range(thread_count)]
-
-        current_threads: List[threading.Thread] = [threading.Thread(name=f'generator_thread_{i}', target=puzzle_generator_function, args=(diff, i, responses, done_flags)) for i in range(thread_count)]
-        for thread in current_threads:
-            thread.start()
-            # start them all and let them do their thing
-        for event in done_flags:
-            event.wait()
-            print(responses)
-            # wait for them to finish without sleeping
-        st = time.time()
-        print("This should be instant")
-        for thread in current_threads:
-            thread.join()
-        et = time.time()
-        dt = round((et - st), 5)
-        print(f"It took {dt} seconds.")
-        if any((item is None) for item in responses):
-            # I want to know ASAP if this doesn't work.
-            raise TypeError("???")
-
-        least_to_most: List[Tuple[float, List[List[int]]]] = sorted(responses, key=lambda pair: pair[0])  # type: ignore
-        current_least_fullness = least_to_most[0][0]
-        current_least_grid = least_to_most[0][1]
-        current_most_fullness = least_to_most[-1][0]
-        current_most_grid = least_to_most[-1][1]
-        for pair in least_to_most:
-            current_fullness = pair[0]
-            if target_min_fullness <= current_fullness <= target_max_fullness:
-                return deepcopy(pair[1])
-        if (get_min) and (current_least_fullness < least_fullness):
-            least_fullness = current_least_fullness
-            least_full_found_grid = deepcopy(current_least_grid)
-        if (not get_min) and (current_most_fullness > most_fullness):
-            most_fullness = current_most_fullness
-            most_full_found_grid = deepcopy(current_most_grid)
-        count += 1
-        gc.collect()
-
-    print("Couldn't find a grid in target range within the try limit.")
-    print(f"Lowest I could do is {100*least_fullness}% full.")
-    print(f"Highest I could do is {100*most_fullness}% full.")
-    if get_min:
-        return least_full_found_grid
-    return most_full_found_grid
-
-
 def read_grid_picture_to_grid(keras_model, filename: str, predict_grayscale_function) -> List[List[int]]:
     current_directory_files = [str(f) for f in os.listdir(os.getcwd())]
     if not (str(filename) in current_directory_files):
@@ -736,6 +654,88 @@ def servermain(filename, ai_model, predict_grayscale_func) -> Tuple[bool, str, s
     return (solved_status, grid_name, solved_name, returned_grid, error_message, error_name, error_line)
     # return value:
     # successful as a boolean, name of solved grid file as a string, name of solved full image file as a string, completed or not grid as 9 lists of 9 numbers in a list, error message as a string, error name as a string, error line as an int
+
+
+def puzzle_generator_function(diff: int, index: int, responses: List[Tuple[float, List[List[int]]] | None], done_flags: List[threading.Event]):
+    puzzle_grid = generate_puzzle(diff)
+    puzzle_items = grid_to_list(puzzle_grid)
+    full_tile_count = 81 - puzzle_items.count(0)
+    current_fullness = round((full_tile_count / 81), 4)
+    result = (current_fullness, puzzle_grid)
+    responses[index] = deepcopy(result)
+    done_flags[index].set()
+
+
+def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: float | int = 0.5, minimum_desired_fullness: float | int = 0.001, maximum_tries: int = 5, get_min: bool = True) -> List[List[int]]:
+    target_max_fullness = round(maximum_desired_fullness, 4)
+    target_min_fullness = round(minimum_desired_fullness, 4)
+    if maximum_desired_fullness >= 1:
+        digits: int = np.ceil(np.log10(target_max_fullness))
+        target_max_fullness = round((maximum_desired_fullness / pow(10, digits)), 4)
+    if minimum_desired_fullness >= 1:
+        digits: int = np.ceil(np.log10(target_min_fullness))
+        target_min_fullness = round((minimum_desired_fullness / pow(10, digits)), 4)
+
+    assert maximum_desired_fullness > minimum_desired_fullness
+    # Maybe one day I'll replace this with a proper error, but I'm the only user so it's low priority
+
+    least_fullness = 1.0
+    least_full_found_grid = deepcopy(EMPTYGRID)
+    most_fullness = 0.0
+    most_full_found_grid = deepcopy(EMPTYGRID)
+    count = 0
+
+    thread_count: int = 3
+
+    while count < maximum_tries:
+        print(f"Turn {count+1} of {maximum_tries} attempts...")
+
+        responses: List[Tuple[float, List[List[int]]] | None] = [None] * thread_count
+        done_flags: List[threading.Event] = [threading.Event() for i in range(thread_count)]
+
+        current_threads: List[threading.Thread] = [threading.Thread(name=f'generator_thread_{i}', target=puzzle_generator_function, args=(diff, i, responses, done_flags)) for i in range(thread_count)]
+        for thread in current_threads:
+            thread.start()
+            # start them all and let them do their thing
+        for event in done_flags:
+            event.wait()
+            print(responses)
+            # wait for them to finish without sleeping
+        st = time.time()
+        print("This should be instant")
+        for thread in current_threads:
+            thread.join()
+        et = time.time()
+        dt = round((et - st), 5)
+        print(f"It took {dt} seconds.")
+        if any((item is None) for item in responses):
+            # I want to know ASAP if this doesn't work.
+            raise TypeError("???")
+
+        least_to_most: List[Tuple[float, List[List[int]]]] = sorted(responses, key=lambda pair: pair[0])  # type: ignore
+        current_least_fullness = least_to_most[0][0]
+        current_least_grid = least_to_most[0][1]
+        current_most_fullness = least_to_most[-1][0]
+        current_most_grid = least_to_most[-1][1]
+        for pair in least_to_most:
+            current_fullness = pair[0]
+            if target_min_fullness <= current_fullness <= target_max_fullness:
+                return deepcopy(pair[1])
+        if (get_min) and (current_least_fullness < least_fullness):
+            least_fullness = current_least_fullness
+            least_full_found_grid = deepcopy(current_least_grid)
+        if (not get_min) and (current_most_fullness > most_fullness):
+            most_fullness = current_most_fullness
+            most_full_found_grid = deepcopy(current_most_grid)
+        count += 1
+        gc.collect()
+
+    print("Couldn't find a grid in target range within the try limit.")
+    print(f"Lowest I could do is {100*least_fullness}% full.")
+    print(f"Highest I could do is {100*most_fullness}% full.")
+    if get_min:
+        return least_full_found_grid
+    return most_full_found_grid
 
 
 def get_or_create_eventloop() -> asyncio.AbstractEventLoop:
