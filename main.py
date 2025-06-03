@@ -80,19 +80,19 @@ else:
 
 gc.collect()
 
-import atexit
+# import atexit
 
 
-def exit_handler():
-    logging.shutdown()
-    if FILE in os.listdir(LOCK):
-        os.remove(KEY)
-    else:
-        print("no lock while quitting.")
-    print('Program shut down.')
+# def exit_handler():
+#     logging.shutdown()
+#     if FILE in os.listdir(LOCK):
+#         os.remove(KEY)
+#     else:
+#         print("no lock while quitting.")
+#     print('Program shut down.')
 
 
-atexit.register(exit_handler)
+# atexit.register(exit_handler)
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
@@ -527,11 +527,21 @@ if __name__ == '__main__':
     try:
         main(TOKEN, ADMIN_ID)
         print("Mainloop looped.")
+        if FILE in os.listdir(LOCK):
+            os.remove(KEY)
+            print("Removed file lock")
+        else:
+            print("No lock while quitting.")
         logging.shutdown()
         sys.exit(0)
     except Exception as e:
         print("Generic exception? I don't know how to handle that.")
         print(f"Error type name: {type(e).__name__}")
         print(f"Error message  : {str(e)}")
+        if FILE in os.listdir(LOCK):
+            os.remove(KEY)
+            print("Removed file lock")
+        else:
+            print("No lock while quitting.")
         logging.shutdown()
         sys.exit(1)
