@@ -783,7 +783,7 @@ async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> Await
         - Possible Error Name  as  str or None
         - Possible Error Line  as  int or None
     """
-    # return asyncio.to_thread(make_puzzle_blocking_faster, file_name, difficulty)
+    # return asyncio.to_thread(make_puzzle_blocking_iterative, file_name, difficulty)
     return asyncio.to_thread(make_puzzle_blocking_thorough, file_name, difficulty)
 
 
@@ -985,7 +985,7 @@ def generate_puzzle_with_restrictions(diff: int = 0, minimum_required_fill: floa
     return (True, new_grid)
 
 
-def create_custom_puzzle_fast(diff: int = 0, maximum_desired_fullness: float | int = 0.5, minimum_desired_fullness: float | int = 0.001, maximum_tries: int = 5) -> List[List[int]]:
+def create_custom_puzzle_iterative(diff: int = 0, maximum_desired_fullness: float | int = 0.5, minimum_desired_fullness: float | int = 0.001, maximum_tries: int = 5) -> List[List[int]]:
     target_max_fullness = round(maximum_desired_fullness, 4)
     target_min_fullness = round(minimum_desired_fullness, 4)
 
@@ -999,9 +999,11 @@ def create_custom_puzzle_fast(diff: int = 0, maximum_desired_fullness: float | i
     cant_solve = True
     target_max = max(target_max_fullness, target_min_fullness)
     target_min = min(target_min_fullness, target_max_fullness)
+    iter: int = 0
     while cant_solve:
         counter = 0
         while counter < maximum_tries:
+            print(f"Iteration {iter} on {counter+1}/{maximum_tries} with the goals of {round(target_min*100, 2)}% - {round(target_max*100, 2)}%")
             worked, puzzle = generate_puzzle_with_restrictions(diff=diff, minimum_required_fill=minimum_desired_fullness, maximum_allowed_fill=maximum_desired_fullness)
             counter += 1
             if worked:
@@ -1010,10 +1012,11 @@ def create_custom_puzzle_fast(diff: int = 0, maximum_desired_fullness: float | i
         target_max += 0.025  # 2.5 percent higher
         target_min -= 0.025  # 2.5 percent lower
         maximum_tries += 1
+        iter += 1
     return EMPTYGRID  # This is purely cosmetic to make this function look cleaner
 
 
-def make_puzzle_blocking_faster(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
+def make_puzzle_blocking_iterative(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
     """Generates a sudoku puzzle image based on the difficulty and saves it to your `file_name`
     This function is blocking, meaning the rest of your code won't progress until it's done, which takes a few minutes.
 
@@ -1039,7 +1042,7 @@ def make_puzzle_blocking_faster(file_name: str, difficulty: str = 'MEDIUM') -> T
 
     match difficulty:
         case 'HARD':
-            puzzle_grid = create_custom_puzzle_fast(
+            puzzle_grid = create_custom_puzzle_iterative(
                 diff=0,
                 maximum_desired_fullness=0.4555,
                 minimum_desired_fullness=0.0,
@@ -1047,7 +1050,7 @@ def make_puzzle_blocking_faster(file_name: str, difficulty: str = 'MEDIUM') -> T
             )
             print('Generating a new HARD puzzle')
         case 'EASY':
-            puzzle_grid = create_custom_puzzle_fast(
+            puzzle_grid = create_custom_puzzle_iterative(
                 diff=8,
                 maximum_desired_fullness=0.77,
                 minimum_desired_fullness=0.59,
@@ -1055,7 +1058,7 @@ def make_puzzle_blocking_faster(file_name: str, difficulty: str = 'MEDIUM') -> T
             )
             print('Generating a new EASY puzzle')
         case _:
-            puzzle_grid = create_custom_puzzle_fast(
+            puzzle_grid = create_custom_puzzle_iterative(
                 diff=4,
                 maximum_desired_fullness=0.626,
                 minimum_desired_fullness=0.498,
@@ -1095,7 +1098,7 @@ def test() -> None:  # type: ignore
 
     match TEST:
         case 'PUZZLE_FASTER':
-            _puzzle = create_custom_puzzle_fast(0, 42.5, maximum_tries=7)
+            _puzzle = create_custom_puzzle_iterative(0, 42.5, maximum_tries=7)
             _main_grid = deepcopy(_puzzle)
             print("\n")
             print("Generated Puzzle (new):")
