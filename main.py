@@ -80,27 +80,25 @@ else:
 
 gc.collect()
 
-# import atexit
+import atexit
 
 
-# def exit_handler():
-#     logging.shutdown()
-#     if FILE in os.listdir(LOCK):
-#         os.remove(KEY)
-#     else:
-#         print("no lock while quitting.")
-#     print('Program shut down.')
+def exit_handler() -> None:
+    if FILE in os.listdir(LOCK):
+        os.remove(KEY)
+        print("Removed file lock")
+    else:
+        print("No lock while quitting.")
+    logging.shutdown()
 
 
-# atexit.register(exit_handler)
+atexit.register(exit_handler)
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 print('importing the important stuff')
 
 import asyncio
-# import requests
-import signal
 import socket
 import threading
 import time
@@ -414,31 +412,27 @@ def get_or_create_eventloop() -> asyncio.AbstractEventLoop:
         return current_loop
 
 
-async def bot_handle_end_signal(app, admin_id) -> None:
-    logging.info("Received a signal to end, performing cleanup...")
-    await notify_end(app, admin_id)
-    await app.shutdown()
-
-
-def register_signal_handler(app, admin_id) -> None:
-    def end_signal_handler(_signal_number, _frame) -> None:
-        print('Signal:')
-        print(_signal_number)
-        print(signal.getsignal(_signal_number))
-        event_loop = get_or_create_eventloop()
-        event_loop.run_until_complete(bot_handle_end_signal(app, admin_id))
-    print('Set up SIGTERM, SIGINT, SIGABRT for termination')
-    signal.signal(signal.SIGTERM, end_signal_handler)
-    signal.signal(signal.SIGINT, end_signal_handler)
-    signal.signal(signal.SIGABRT, end_signal_handler)
-
-
-async def notify_start(app, admin_id) -> None:
+async def notify_start(app, admin_id: int) -> None:
     await app.bot.send_message(chat_id=admin_id, text="The bot has started!")
 
 
-async def notify_end(app, admin_id) -> None:
+async def notify_end(app, admin_id: int) -> None:
     await app.bot.send_message(chat_id=admin_id, text="The bot is shutting down.")
+
+
+async def bot_end_handler_async(app) -> None:
+    await notify_end(app, 10)
+    print("Ending the program, bot_end_handler did it's job.")
+
+
+def bot_end_handler(_=None, __=None):
+    # asyncio.run(bot_end_handler_async(app))
+    print('hi')
+
+
+async def coroutine_object(app: ApplicationBuilder):
+    await asyncio.sleep(1)
+    return 'Hi!'
 
 
 def main(bot_token, admin_id):
@@ -481,18 +475,18 @@ def main(bot_token, admin_id):
 
     event_loop = get_or_create_eventloop()
 
-    register_signal_handler(application, admin_id)
     event_loop.run_until_complete(notify_start(application, admin_id))
 
     print("Informed admin of start.")
+
+    application.post_stop(coroutine_object)
+
     print("Set up graceful exit for sigterm")
 
     application.run_polling()
 
-    print("Mainloooop... dying... sigterm...")
-    # event_loop = get_or_create_eventloop()
-    # event_loop.run_until_complete(notify_end(application, admin_id))
-    print("Hopefully informed admin of shutdown.")
+    print("Mainloooop... dying... terminated...")
+    print("Informed admin of shutdown.")
     try:
         event_loop.stop()
     except RuntimeError:
@@ -538,10 +532,4 @@ if __name__ == '__main__':
         print("Generic exception? I don't know how to handle that.")
         print(f"Error type name: {type(e).__name__}")
         print(f"Error message  : {str(e)}")
-        if FILE in os.listdir(LOCK):
-            os.remove(KEY)
-            print("Removed file lock")
-        else:
-            print("No lock while quitting.")
-        logging.shutdown()
         sys.exit(1)

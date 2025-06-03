@@ -17,9 +17,9 @@ WHITE_IMAGE.save('0.png')
 print('saved "0.png"')
 
 FONT_COLOR = 255
-TARGET = 0.81
+TARGET = 0.66666
 
-LIMIT = IMG_SIZE * TARGET
+LIMIT = round(IMG_SIZE * TARGET, 4)
 
 # ANCHOR = 'ls'  # left bottom(baseline, only works in single lines)
 ANCHOR = 'mm'  # exact middle
@@ -27,8 +27,8 @@ ORIGIN = (round(IMG_SIZE/2), round(IMG_SIZE/2))
 
 for n in range(1, 10):
     size = (0, 0)  # pylint: disable=C0103
-    variable_font_size = 0  # pylint: disable=C0103
-    font_size = 1  # pylint: disable=C0103
+    variable_font_size: float = 1.11111  # pylint: disable=C0103
+    font_size: float = 1.111111  # pylint: disable=C0103
 
     font_object = ImageFont.truetype(font='arial', size=font_size)
 
@@ -39,13 +39,18 @@ for n in range(1, 10):
     RUN_LOOP = True
     while RUN_LOOP:
         font_object = ImageFont.truetype(font='arial', size=font_size)
-        size = font_object.getsize(text=TEXT)
-        if size[0] > LIMIT or size[1] > LIMIT:
+        # size = font_object.getsize(text=TEXT)
+        # size : width, height
+        # bbox : left, top, right, bottom (positions)
+        pos_left, pos_top, pos_right, pos_bottom = font_object.getbbox(TEXT)
+        width = abs(pos_left - pos_right)
+        height = abs(pos_top - pos_bottom)
+        if width > LIMIT or height > LIMIT:
             RUN_LOOP = False  # pylint: disable=C0103
             break
         font_size = variable_font_size  # pylint:disable=C0103
-        variable_font_size += 1
-        variable_font_size = round(variable_font_size, 3)
+        variable_font_size += 0.11111
+        variable_font_size = round(variable_font_size, 4)
 
     font_object = ImageFont.truetype(font='arial', size=font_size)
     # width, height = font_object.getsize(text=TEXT)
