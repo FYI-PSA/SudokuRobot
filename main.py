@@ -182,20 +182,12 @@ async def help(update, context):
     print(f"User info:\n{user_profile}")
 
 
-async def dummy_takes_long(update, context):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="This is supposed to take 10 seconds.\nUse something else in the meanwhile.")
-    print("I hate you.")
-    await asyncio.sleep(10)
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="Did it work?")
-    print("Damn you.")
-
-
-print('importing the heart of the project, including keras, which will take a while...')
+print('importing the heart of the project including Keras, which will take a while...')
 import servermain
 from tilereader import grayscale_numpy_tiles_list_to_predicted_integer_list as predict_grayscale_func
 from tilereader import load_model
 AImodel = load_model()
-print('ai model loaded.')
+print('AI model loaded.')
 
 
 async def respond_messages(update, context):
@@ -435,7 +427,7 @@ def register_signal_handler(app, admin_id) -> None:
         print(signal.getsignal(_signal_number))
         event_loop = get_or_create_eventloop()
         event_loop.run_until_complete(bot_handle_end_signal(app, admin_id))
-    print('Received a shutdown signal.')
+    print('Set up SIGTERM, SIGINT, SIGABRT for termination')
     signal.signal(signal.SIGTERM, end_signal_handler)
     signal.signal(signal.SIGINT, end_signal_handler)
     signal.signal(signal.SIGABRT, end_signal_handler)
@@ -471,8 +463,6 @@ def main(bot_token, admin_id):
     generate_easy_handler = CommandHandler('generate_easy', send_easy_generated)
     generate_medium_handler = CommandHandler('generate', send_medium_generated)
 
-    dummy_long_handler = CommandHandler('dummy_long', dummy_takes_long)
-
     message_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), respond_messages)
     image_handler = MessageHandler(filters.PHOTO & (filters.FORWARDED | ~filters.FORWARDED), process_image)
 
@@ -483,8 +473,6 @@ def main(bot_token, admin_id):
     application.add_handler(generate_hard_handler)
     application.add_handler(generate_easy_handler)
     application.add_handler(generate_medium_handler)
-
-    application.add_handler(dummy_long_handler)
 
     application.add_handler(message_handler)
     application.add_handler(image_handler)
