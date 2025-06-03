@@ -783,10 +783,11 @@ async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> Await
         - Possible Error Name  as  str or None
         - Possible Error Line  as  int or None
     """
-    return asyncio.to_thread(make_puzzle_blocking_faster, file_name, difficulty)
+    # return asyncio.to_thread(make_puzzle_blocking_faster, file_name, difficulty)
+    return asyncio.to_thread(make_puzzle_blocking_thorough, file_name, difficulty)
 
 
-def make_puzzle_blocking_more_thorough(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
+def make_puzzle_blocking_thorough(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
     """Generates a sudoku puzzle image based on the difficulty and saves it to your `file_name`
     This function is blocking, meaning the rest of your code won't progress until it's done, which takes a few minutes.
 
