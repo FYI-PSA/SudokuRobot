@@ -415,18 +415,22 @@ def get_or_create_eventloop() -> asyncio.AbstractEventLoop:
 
 
 async def bot_handle_end_signal(app, admin_id) -> None:
-    logging.info("Received SIGTERM, performing cleanup...")
+    logging.info("Received a signal to end, performing cleanup...")
     await notify_end(app, admin_id)
     await app.shutdown()
 
 
 def register_signal_handler(app, admin_id) -> None:
     def end_signal_handler(_signal_number, _frame) -> None:
+        print('Signal:')
+        print(_signal_number)
+        print(signal.getsignal(_signal_number))
         event_loop = get_or_create_eventloop()
         event_loop.run_until_complete(bot_handle_end_signal(app, admin_id))
-
+    print('Received a shutdown signal.')
     signal.signal(signal.SIGTERM, end_signal_handler)
     signal.signal(signal.SIGINT, end_signal_handler)
+    signal.signal(signal.SIGABRT, end_signal_handler)
 
 
 async def notify_start(app, admin_id) -> None:
@@ -528,9 +532,11 @@ if __name__ == '__main__':
     try:
         main(TOKEN, ADMIN_ID)
         print("Mainloop looped.")
+        logging.shutdown()
         sys.exit(0)
     except Exception as e:
         print("Generic exception? I don't know how to handle that.")
         print(f"Error type name: {type(e).__name__}")
         print(f"Error message  : {str(e)}")
+        logging.shutdown()
         sys.exit(1)
