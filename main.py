@@ -431,7 +431,7 @@ def bot_end_handler(_=None, __=None):
 
 
 async def coroutine_object(_app):
-    print('Why does this error in pylance?')
+    print('Why does this error in Pylance?')
     await asyncio.sleep(1)
     return 'Hi!'
 
