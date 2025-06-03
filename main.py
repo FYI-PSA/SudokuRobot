@@ -108,7 +108,7 @@ import time
 from http import HTTPStatus
 from telegram import InputMediaPhoto
 from telegram.error import Conflict
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, Defaults
 
 
 def bind_port():
@@ -312,7 +312,7 @@ async def send_generated_modular(update, context, difficulty: str, first_respons
         possible_error_message,
         possible_error_name,
         possible_error_line
-    ) = result
+    ) = await result
 
     await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=first_reply.message_id)
 
@@ -448,7 +448,9 @@ def main(bot_token, admin_id):
 
     event_loop = get_or_create_eventloop()
 
-    application = ApplicationBuilder().token(f"{bot_token}").build()
+    defaults = Defaults(block=False)
+
+    application = ApplicationBuilder().token(f"{bot_token}").read_timeout(10).write_timeout(10).connect_timeout(10).connection_pool_size(3).defaults(defaults).build()
 
     start_handler = CommandHandler('start', start)
     help_handler = CommandHandler('help', help)

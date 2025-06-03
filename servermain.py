@@ -118,7 +118,7 @@ EMPTYGRID = [[0 for _ in range(9)] for _ in range(9)]
 
 def grid_to_list(grid: List[List[int]]) -> List[int]:
     result = []
-    for row in grid:
+    for row in deepcopy(grid):
         result.extend(row)
     return result
 
@@ -134,7 +134,7 @@ def grid_list_to_np(grid_list) -> np.ndarray:
 
 
 class Solver():
-    def __init__(self, grid: list):
+    def __init__(self, grid: List[List[int]]):
         self.ALL = set(range(1, 10))  # pylint: disable=C0103
         self.CHECK_CELLS = [(0, 0), (1, 3), (2, 6), (3, 1), (4, 4), (5, 7), (6, 2), (7, 5), (8, 8)]  # pylint: disable=C0103
         # Definitely mathematically redundant and can be reduced.
@@ -142,6 +142,13 @@ class Solver():
         self.SOLUTIONS = set()  # pylint: disable=C0103
         self.COUNT = 0  # pylint: disable=C0103
         self.GRID = deepcopy(grid)  # pylint: disable=C0103
+        self.first_grid = deepcopy(self.GRID)
+        self.first_solution = deepcopy(self.GRID)
+
+    def set_new_grid(self, new_grid: List[List[int]]):
+        self.SOLUTIONS = set()  # pylint: disable=C0103
+        self.COUNT = 0  # pylint: disable=C0103
+        self.GRID = deepcopy(new_grid)  # pylint: disable=C0103
         self.first_grid = deepcopy(self.GRID)
         self.first_solution = deepcopy(self.GRID)
 
@@ -656,17 +663,15 @@ def servermain(filename, ai_model, predict_grayscale_func) -> Tuple[bool, str, s
     # successful as a boolean, name of solved grid file as a string, name of solved full image file as a string, completed or not grid as 9 lists of 9 numbers in a list, error message as a string, error name as a string, error line as an int
 
 
-def puzzle_generator_function(diff: int, index: int, responses: List[Tuple[float, List[List[int]]] | None], done_flags: List[threading.Event]):
+def puzzle_generator_function_slow(diff: int, index: int, responses: List[Tuple[float, List[List[int]]] | None], done_flags: List[threading.Event]):
     puzzle_grid = generate_puzzle(diff)
-    puzzle_items = grid_to_list(puzzle_grid)
-    full_tile_count = 81 - puzzle_items.count(0)
-    current_fullness = round((full_tile_count / 81), 4)
+    current_fullness = get_grid_fullness(puzzle_grid)
     result = (current_fullness, puzzle_grid)
     responses[index] = deepcopy(result)
     done_flags[index].set()
 
 
-def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: float | int = 0.5, minimum_desired_fullness: float | int = 0.001, maximum_tries: int = 5, get_min: bool = True) -> List[List[int]]:
+def create_custom_puzzle_thorough(diff: int = 0, maximum_desired_fullness: float | int = 0.5, minimum_desired_fullness: float | int = 0.001, maximum_tries: int = 5, get_min: bool = True) -> List[List[int]]:
     target_max_fullness = round(maximum_desired_fullness, 4)
     target_min_fullness = round(minimum_desired_fullness, 4)
     if maximum_desired_fullness >= 1:
@@ -694,7 +699,7 @@ def generate_puzzle_with_less_tiles(diff: int = 0, maximum_desired_fullness: flo
         responses: List[Tuple[float, List[List[int]]] | None] = [None] * thread_count
         done_flags: List[threading.Event] = [threading.Event()] * thread_count
 
-        current_threads: List[threading.Thread] = [threading.Thread(name=f'generator_thread_{i}', target=puzzle_generator_function, args=(diff, i, responses, done_flags)) for i in range(thread_count)]
+        current_threads: List[threading.Thread] = [threading.Thread(name=f'generator_thread_{i}', target=puzzle_generator_function_slow, args=(diff, i, responses, done_flags)) for i in range(thread_count)]
 
         for thread in current_threads:
             thread.start()
@@ -756,7 +761,9 @@ def get_or_create_eventloop() -> asyncio.AbstractEventLoop:
         return current_loop
 
 
-async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
+# async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
+# not allowed to send a future by pylint standards
+async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> asyncio.Future[Tuple[List[List[int]], str, str | None, str | None, int | None]]:
     """Generates a sudoku puzzle image based on the difficulty and saves it to your `file_name`
     This function is non blocking, it takes a few minutes to finish, and you can use it asynchronously.
 
@@ -766,7 +773,7 @@ async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> Tuple
             \n (Defaults to `MEDIUM` if not provided or incorrectly provided)
 
     Return:
-        A Tuple of the following in the same order:\n
+        A Future Tuple of the following in the same order:\n
         - Puzzle Grid  as  List[List[int]]
         - Puzzle Image File Name  as  str
         - Possible Error Message  as  str or None
@@ -774,17 +781,14 @@ async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> Tuple
         - Possible Error Line  as  int or None
     """
 
-    # TODO: THIS WHOLE THING CAN BE SPED UP A LOT
-    # JUST HAVE TO IMPLEMENT THE FULLNESS RESTRICTIONS AS PART OF GENERATE_PUZZLE INSTEAD OF LESS_TILES
-    # BECAUSE THEN ITS PART OF COND
-
     event_loop: asyncio.AbstractEventLoop = get_or_create_eventloop()
     with ThreadPoolExecutor() as executor:
-        result = event_loop.run_in_executor(executor, make_puzzle_blocking, file_name, difficulty)
-        return await result
+        # result = event_loop.run_in_executor(executor, make_puzzle_blocking_more_thorough, file_name, difficulty)
+        # return await result
+        return event_loop.run_in_executor(executor, make_puzzle_blocking_more_thorough, file_name, difficulty)
 
 
-def make_puzzle_blocking(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
+def make_puzzle_blocking_more_thorough(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
     """Generates a sudoku puzzle image based on the difficulty and saves it to your `file_name`
     This function is blocking, meaning the rest of your code won't progress until it's done, which takes a few minutes.
 
@@ -810,7 +814,7 @@ def make_puzzle_blocking(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[Li
 
     match difficulty:
         case 'HARD':
-            puzzle_grid = generate_puzzle_with_less_tiles(
+            puzzle_grid = create_custom_puzzle_thorough(
                 diff=0,
                 maximum_desired_fullness=0.4555,
                 minimum_desired_fullness=0.0,
@@ -819,7 +823,7 @@ def make_puzzle_blocking(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[Li
             )
             print('Generating a new HARD puzzle')
         case 'EASY':
-            puzzle_grid = generate_puzzle_with_less_tiles(
+            puzzle_grid = create_custom_puzzle_thorough(
                 diff=8,
                 maximum_desired_fullness=0.77,
                 minimum_desired_fullness=0.59,
@@ -828,12 +832,235 @@ def make_puzzle_blocking(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[Li
             )
             print('Generating a new EASY puzzle')
         case _:
-            puzzle_grid = generate_puzzle_with_less_tiles(
+            puzzle_grid = create_custom_puzzle_thorough(
                 diff=4,
                 maximum_desired_fullness=0.626,
                 minimum_desired_fullness=0.498,
                 maximum_tries=3,
                 get_min=False
+            )
+            print('Generating a new MEDIUM puzzle')
+
+    gc.collect()
+    puzzle_tiles = grid_to_list(puzzle_grid)
+    print(f'dissolved grid to {puzzle_tiles}')
+
+    error_message, error_name, error_line = None, None, None
+    try:
+        write_puzzle_to_image(puzzle_tiles, filename)
+    except Exception as err:
+        print('write to file failed with an error')
+        error_message = str(err)
+        error_name = type(err).__name__
+        last_event = sys.exc_info()[-1]
+        error_line = (-1 if last_event is None else last_event.tb_lineno)
+
+    return (puzzle_grid, filename, error_message, error_name, error_line)
+
+
+def get_grid_fullness(grid: List[List[int]]) -> float:
+    return round(((81 - grid_to_list(grid).count(0)) / 81), 3)
+
+
+def generate_puzzle_with_restrictions(diff: int = 0, minimum_required_fill: float = 0.0, maximum_allowed_fill: float = 1.0) -> Tuple[bool, List[List[int]]]:
+    """Makes a Sudoku puzzle grid based on the difficulty provided
+
+    Args:
+        diff (int, optional): For each level, it adds one additional tile of information. Defaults to 0 for hard mode.
+        Negative values might cause the puzzle to have multiple solutions.
+
+        minimum_required_fill (float, optional): A float between 0.0 and 1.0, lower than (and preferably not equal to) the other one
+        Signifies the minimum percentage of the grid that should be filled
+
+        maximum_allowed_fill (float, optional): A float between 0.0 and 1.0, higher than (and preferably not equal to) the other one
+        Signifies the maximum percentage of the grid that may be filled
+
+    Returns:
+        A Tuple:
+        - boolean: If a puzzle could be made with the requirements
+        - List[List[int]]: The potentially unsolved puzzle, or an EMPTYGRID.
+    """
+    # get a solver object in here
+    # fill in the diagonal randomly (and more later)
+    # generate_count_of_solutions, or don't, I think it's mathematically calculable if it's just the diagonal. save as magic number.
+    # generate all solutions with the solver object
+    # randomly choose one.
+    # then continue with this:
+
+    flat_grid = list(map(int, np.zeros(81)))
+    solution_checker = Solver(EMPTYGRID)
+    base_flat = None
+    works = False
+    while not works:
+        base_flat = deepcopy(flat_grid)
+        for i in range(9):
+            random = 1.0 - np.random.rand()
+            random = random * 0.9
+            random = int(np.ceil(random * 100) // 10)
+            base_flat[10*i] = random
+        solution_checker.set_new_grid(back_to_grid(base_flat))
+        works = solution_checker.check_valid_grid()
+    base_scramble = (flat_grid if base_flat is None else base_flat)
+
+    test_base_scramble = None
+    works = False
+    while not works:
+        test_base_scramble = deepcopy(base_scramble)
+        for i in range(9):
+            random = 1.0 - np.random.rand()
+            random = random * 0.9
+            random = int(np.ceil(random * 100) // 10)
+            test_base_scramble[8*(i+1)] = random
+            # 8*(i+1) and 10*(i) values are magic numbers that give the indices of the main diagonals with i
+        solution_checker.set_new_grid(back_to_grid(test_base_scramble))
+        works = solution_checker.check_valid_grid()
+    scrambled_diagonals = (base_scramble if test_base_scramble is None else test_base_scramble)
+    grid_scrambled = back_to_grid(scrambled_diagonals)
+
+    solve_it = Solver(grid_scrambled)
+    try:
+        possible, count, _ = solve_it.count_and_solve()
+        if not possible:
+            raise BadInspectionException("How in the hell did this thing pass inspection?")
+    except BadInspectionException as e:
+        print(f"The code failed due to bad inspection: {e}")
+        return (False, EMPTYGRID)
+    except Exception as e:
+        print("Generic exception WHILE generating puzzle? That's strange.")
+        raise e
+
+    assert (count > 0)  # otherwise the above exception would be raised
+    # asserting this in case I miscalculated something in my algorithm
+
+    random = np.random.rand()
+    random = int(np.floor(random*100*count) / 100)
+
+    if not (-1 < random < count):
+        print('Random is choosing incorrectly?')
+        random = random % count
+
+    # print(f"Out of {count} possible grids, #{random} was chosen.")
+
+    full_grid = solve_it.get_solution_from_index(random)
+
+    indices = np.arange(0, 81, 1)
+    np.random.shuffle(indices)
+    np.random.shuffle(indices)
+    np.random.shuffle(indices)
+    # Three time's the charm!
+
+    solved_grid = []
+    for r in full_grid:
+        solved_grid.extend(r)
+
+    still_too_much = True
+    middle = 81 // 2
+    count = 1
+    tester = Solver(EMPTYGRID)
+    fullness: float = 0.0
+    while still_too_much:
+        given_indices = indices[:middle+1]
+        new_grid = back_to_grid([item if (index in given_indices) else 0 for index, item in enumerate(solved_grid)])
+        tester.set_new_grid(new_grid)
+        possible, count, _ = tester.count_and_solve()
+        middle = middle // 2
+        fullness = get_grid_fullness(new_grid)
+        if count != 1 or middle == 0:
+            still_too_much = False
+        if (fullness < minimum_required_fill):
+            return (False, new_grid)
+    while count > 1:
+        given_indices = indices[:middle+1]
+        new_grid = back_to_grid([item if index in given_indices else 0 for index, item in enumerate(solved_grid)])
+        tester.set_new_grid(new_grid)
+        possible, count, _ = tester.count_and_solve()
+        if count > 1:
+            middle += 1
+
+    middle = max(0, min((middle + diff), 80))  # avoids if the index goes negative or goes above 80
+    given_indices = indices[:middle+1]
+    new_grid = back_to_grid([item if index in given_indices else 0 for index, item in enumerate(solved_grid)])
+    fullness = get_grid_fullness(new_grid)
+    if (fullness > maximum_allowed_fill):
+        return (False, new_grid)
+    return (True, new_grid)
+
+
+def create_custom_puzzle_fast(diff: int = 0, maximum_desired_fullness: float | int = 0.5, minimum_desired_fullness: float | int = 0.001, maximum_tries: int = 5) -> List[List[int]]:
+    target_max_fullness = round(maximum_desired_fullness, 4)
+    target_min_fullness = round(minimum_desired_fullness, 4)
+
+    if target_max_fullness >= 1:
+        digits: int = np.ceil(np.log10(target_max_fullness))
+        target_max_fullness = round((maximum_desired_fullness / pow(10, digits)), 4)
+    if target_min_fullness >= 1:
+        digits: int = np.ceil(np.log10(target_min_fullness))
+        target_min_fullness = round((minimum_desired_fullness / pow(10, digits)), 4)
+
+    cant_solve = True
+    target_max = max(target_max_fullness, target_min_fullness)
+    target_min = min(target_min_fullness, target_max_fullness)
+    while cant_solve:
+        counter = 0
+        while counter < maximum_tries:
+            worked, puzzle = generate_puzzle_with_restrictions(diff=diff, minimum_required_fill=minimum_desired_fullness, maximum_allowed_fill=maximum_desired_fullness)
+            counter += 1
+            if worked:
+                cant_solve = False
+                return puzzle
+        target_max += 0.025  # 2.5 percent higher
+        target_min -= 0.025  # 2.5 percent lower
+        maximum_tries += 1
+    return EMPTYGRID  # This is purely cosmetic to make this function look cleaner
+
+
+def make_puzzle_blocking_faster(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
+    """Generates a sudoku puzzle image based on the difficulty and saves it to your `file_name`
+    This function is blocking, meaning the rest of your code won't progress until it's done, which takes a few minutes.
+
+    Args:
+        file_name (str): The full name (including extension) of the file you want the image to be saved as
+        (optional) difficulty (str): The difficulty of the puzzle (Must be: `HARD`, `MED`/`MEDIUM`, `EASY`)
+            \n (Defaults to `MEDIUM` if not provided or incorrectly provided)
+
+    Return:
+        Tuple of the following in the same order:\n
+        - Puzzle Grid  as  List[List[int]]
+        - Puzzle Image File Name  as  str
+        - Possible Error Message  as  str or None
+        - Possible Error Name  as  str or None
+        - Possible Error Line  as  int or None
+    """
+
+    filename = str(file_name)
+    difficulty = str(difficulty).strip().upper()
+    # name, ext = map(str, get_file_name_info(filename))
+    # puzzle_name = str(f"{name}_solved.{ext}")
+    # print(f"name: {name} |  ext: {ext} |  puzzle_name: {puzzle_name}")
+
+    match difficulty:
+        case 'HARD':
+            puzzle_grid = create_custom_puzzle_fast(
+                diff=0,
+                maximum_desired_fullness=0.4555,
+                minimum_desired_fullness=0.0,
+                maximum_tries=3,
+            )
+            print('Generating a new HARD puzzle')
+        case 'EASY':
+            puzzle_grid = create_custom_puzzle_fast(
+                diff=8,
+                maximum_desired_fullness=0.77,
+                minimum_desired_fullness=0.59,
+                maximum_tries=3,
+            )
+            print('Generating a new EASY puzzle')
+        case _:
+            puzzle_grid = create_custom_puzzle_fast(
+                diff=4,
+                maximum_desired_fullness=0.626,
+                minimum_desired_fullness=0.498,
+                maximum_tries=3,
             )
             print('Generating a new MEDIUM puzzle')
 
@@ -861,28 +1088,23 @@ def test() -> None:  # type: ignore
 
     print('Testing!')
 
-    TEST = 'PUZZLE'  # to test if the puzzle generation works
+    TEST = 'PUZZLE_FASTER'  # to test if the new puzzle generation works
+    # TEST = 'PUZZLE_MORE_EXACT'  # to test if the old puzzle generation works
     # TEST = 'READ'  # to test if the image reading works
     # TEST = 'SERVER'  # to test the main() and servermain() functions
     # TEST = 'EMPTY'  # to test if the ordering of solutions is correct
 
     match TEST:
-        case 'PUZZLE':
-            # _puzzle = generate_puzzle_with_less_tiles(-2, 35)
-            # Way too many solutions
-            # _puzzle = generate_puzzle_with_less_tiles(-1, 42.5)
-            # Only goes up to around 3 solutions at max
-            # I'll have a higher full% so it's more around 2 possible solutions
-            # _puzzle = generate_puzzle_with_less_tiles(-1, 46)
-            # _puzzle = generate_puzzle_with_less_tiles(0, 45)
-            # Sometimes it feels too easy
-            # I'll make it generate less, but I'll give it a limit of 7 so that it's not too slow
-            _puzzle = generate_puzzle_with_less_tiles(0, 42.5, maximum_tries=7)
-            # _puzzle = generate_puzzle_with_less_tiles(1, 50)
-            # _puzzle = generate_puzzle_with_less_tiles(2, 60)
+        case 'PUZZLE_FASTER':
+            _puzzle = create_custom_puzzle_fast(0, 42.5, maximum_tries=7)
             _main_grid = deepcopy(_puzzle)
             print("\n")
-            print("Generated Puzzle:")
+            print("Generated Puzzle (new):")
+        case 'PUZZLE_MORE_EXACT':
+            _puzzle = create_custom_puzzle_thorough(0, 42.5, maximum_tries=7)
+            _main_grid = deepcopy(_puzzle)
+            print("\n")
+            print("Generated Puzzle (old):")
         case 'READ':
             from tilereader import \
                 grayscale_numpy_tiles_list_to_predicted_integer_list as \
