@@ -313,14 +313,14 @@ async def send_generated_modular(update, context, difficulty: str, first_respons
         temp_write_file.write(b'\x00')
     gc.collect()
     print('Entering make_puzzle')
-    result = await servermain.make_puzzle_async(file_name, difficulty=difficulty)
+    asyncio_response_tuple_future = await servermain.make_puzzle_async(file_name, difficulty=difficulty)
     (
         puzzle_grid,
         puzzle_file_name,
         possible_error_message,
         possible_error_name,
         possible_error_line
-    ) = await result
+    ) = await asyncio_response_tuple_future
 
     await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=first_reply.message_id)
 
