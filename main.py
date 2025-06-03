@@ -321,6 +321,7 @@ async def send_generated_modular(update, context, difficulty: str, first_respons
         possible_error_name,
         possible_error_line
     ) = await result
+    # ) = result
 
     await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=first_reply.message_id)
 

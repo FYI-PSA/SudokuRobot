@@ -6,9 +6,9 @@ import sys
 import threading
 import time
 from collections import Counter
-from concurrent.futures import ThreadPoolExecutor
+# from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
-from typing import List, Tuple
+from typing import List, Tuple, Awaitable
 
 import numpy as np
 
@@ -762,8 +762,7 @@ def get_or_create_eventloop() -> asyncio.AbstractEventLoop:
 
 
 # async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
-# not allowed to send a future by pylint standards
-async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> asyncio.Future[Tuple[List[List[int]], str, str | None, str | None, int | None]]:
+async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> Awaitable[Tuple[List[List[int]], str, str | None, str | None, int | None]]:
     """Generates a sudoku puzzle image based on the difficulty and saves it to your `file_name`
     This function is non blocking, it takes a few minutes to finish, and you can use it asynchronously.
 
@@ -780,12 +779,12 @@ async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> async
         - Possible Error Name  as  str or None
         - Possible Error Line  as  int or None
     """
-
-    event_loop: asyncio.AbstractEventLoop = get_or_create_eventloop()
-    with ThreadPoolExecutor() as executor:
-        # result = event_loop.run_in_executor(executor, make_puzzle_blocking_more_thorough, file_name, difficulty)
-        # return await result
-        return event_loop.run_in_executor(executor, make_puzzle_blocking_more_thorough, file_name, difficulty)
+    return asyncio.to_thread(make_puzzle_blocking_faster, file_name, difficulty)
+    # event_loop: asyncio.AbstractEventLoop = get_or_create_eventloop()
+    # with ThreadPoolExecutor() as executor:
+    #     # result = event_loop.run_in_executor(executor, make_puzzle_blocking_more_thorough, file_name, difficulty)
+    #     # return await result
+    #     return event_loop.run_in_executor(executor, make_puzzle_blocking_faster, file_name, difficulty)
 
 
 def make_puzzle_blocking_more_thorough(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:

@@ -1,6 +1,5 @@
 import gc
 import logging
-import sys
 from copy import deepcopy
 from typing import List, Tuple
 
