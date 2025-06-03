@@ -1,5 +1,6 @@
 # Extra
 python_is_correct.py
+pylint_check.ps1
 *.png
 .vscode/
 .vscode/**
