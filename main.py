@@ -430,7 +430,7 @@ def bot_end_handler(_=None, __=None):
     print('hi')
 
 
-async def coroutine_object(app: ApplicationBuilder):
+async def coroutine_object(app):
     await asyncio.sleep(1)
     return 'Hi!'
 
