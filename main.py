@@ -215,12 +215,12 @@ async def process_image(update, context):
     await asyncio.sleep(1)
     img_file_name = str(img_file_name)
     print(f"Saved the file as {img_file_name}")
-    response_tuple = servermain.servermain(
+    asyncio_response_tuple_future = await servermain.async_servermain(
         ai_model=AImodel,
         filename=img_file_name,
         predict_grayscale_func=predict_grayscale_func
     )
-    print(response_tuple)
+    print(asyncio_response_tuple_future)
     (
         success,
         solved_grid_file_name,
@@ -229,7 +229,7 @@ async def process_image(update, context):
         possible_err_details,
         possible_err_name,
         possible_err_line
-        ) = response_tuple
+        ) = await asyncio_response_tuple_future
 
     await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=first_reply.message_id)
 
@@ -291,7 +291,7 @@ async def process_image(update, context):
         captiontext: str = "The image recognition failed, but the program attempted to solve it regardless.\nIf you see a mismatch between a number you provided and one in this grid, you will know that the AI digit recognition failed!"
     else:
         captiontext: str = "Solved!\nHere's the solved puzzle placed inside the original image, alongside a high quality image of only the solved grid."
-    await context.bot.send_media_group(chat_id=update.effective_chat.id, media=mediagroup, caption=captiontext)
+    await context.bot.send_media_group(chat_id=update.effective_chat.id, media=mediagroup, caption=captiontext, reply_to_message_id=update.message.message_id)
 
     print(f"User: {update.message.from_user.username}   |   File name: {img_file_name}   |   Grid: {solved_grid}")
     gc.collect()
@@ -321,7 +321,6 @@ async def send_generated_modular(update, context, difficulty: str, first_respons
         possible_error_name,
         possible_error_line
     ) = await result
-    # ) = result
 
     await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=first_reply.message_id)
 
@@ -353,7 +352,7 @@ async def send_generated_modular(update, context, difficulty: str, first_respons
     else:
         captiontext: str = caption
 
-    await context.bot.send_media_group(chat_id=update.effective_chat.id, media=mediagroup, caption=captiontext)
+    await context.bot.send_media_group(chat_id=update.effective_chat.id, media=mediagroup, caption=captiontext, reply_to_message_id=update.message.message_id)
 
     print(f"User: {update.message.from_user.username}   |   File name: {file_name}")
 
@@ -463,11 +462,6 @@ def main(bot_token, admin_id):
 
     new_defaults = Defaults(block=False)
 
-    # application = ApplicationBuilder().token(f"{bot_token}").build()
-    # application = ApplicationBuilder().token(f"{bot_token}").defaults(new_defaults).build()
-    # application = ApplicationBuilder().token(f"{bot_token}").concurrent_updates(True).build()
-    # application = ApplicationBuilder().token(f"{bot_token}").concurrent_updates(True).defaults(new_defaults).build()
-    # application = ApplicationBuilder().token(f"{bot_token}").read_timeout(10).write_timeout(10).connect_timeout(10).connection_pool_size(3).defaults(new_defaults).build()
     application = ApplicationBuilder().token(f"{bot_token}").read_timeout(10).write_timeout(10).connect_timeout(10).connection_pool_size(3).concurrent_updates(True).defaults(new_defaults).build()
 
     start_handler = CommandHandler('start', start)

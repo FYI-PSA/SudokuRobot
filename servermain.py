@@ -663,6 +663,10 @@ def servermain(filename, ai_model, predict_grayscale_func) -> Tuple[bool, str, s
     # successful as a boolean, name of solved grid file as a string, name of solved full image file as a string, completed or not grid as 9 lists of 9 numbers in a list, error message as a string, error name as a string, error line as an int
 
 
+async def async_servermain(filename, ai_model, predict_grayscale_func) -> Awaitable[Tuple[bool, str, str, List[List[int]], str | None, str | None, int | None]]:
+    return asyncio.to_thread(servermain, filename, ai_model, predict_grayscale_func)
+
+
 def puzzle_generator_function_slow(diff: int, index: int, responses: List[Tuple[float, List[List[int]]] | None], done_flags: List[threading.Event]):
     puzzle_grid = generate_puzzle(diff)
     current_fullness = get_grid_fullness(puzzle_grid)
@@ -780,11 +784,6 @@ async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> Await
         - Possible Error Line  as  int or None
     """
     return asyncio.to_thread(make_puzzle_blocking_faster, file_name, difficulty)
-    # event_loop: asyncio.AbstractEventLoop = get_or_create_eventloop()
-    # with ThreadPoolExecutor() as executor:
-    #     # result = event_loop.run_in_executor(executor, make_puzzle_blocking_more_thorough, file_name, difficulty)
-    #     # return await result
-    #     return event_loop.run_in_executor(executor, make_puzzle_blocking_faster, file_name, difficulty)
 
 
 def make_puzzle_blocking_more_thorough(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
