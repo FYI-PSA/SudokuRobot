@@ -448,9 +448,14 @@ def main(bot_token, admin_id):
 
     event_loop = get_or_create_eventloop()
 
-    defaults = Defaults(block=False)
+    new_defaults = Defaults(block=False)
 
-    application = ApplicationBuilder().token(f"{bot_token}").read_timeout(10).write_timeout(10).connect_timeout(10).connection_pool_size(3).defaults(defaults).build()
+    # application = ApplicationBuilder().token(f"{bot_token}").build()
+    # application = ApplicationBuilder().token(f"{bot_token}").defaults(new_defaults).build()
+    # application = ApplicationBuilder().token(f"{bot_token}").concurrent_updates(True).build()
+    # application = ApplicationBuilder().token(f"{bot_token}").concurrent_updates(True).defaults(new_defaults).build()
+    # application = ApplicationBuilder().token(f"{bot_token}").read_timeout(10).write_timeout(10).connect_timeout(10).connection_pool_size(3).defaults(new_defaults).build()
+    application = ApplicationBuilder().token(f"{bot_token}").read_timeout(10).write_timeout(10).connect_timeout(10).connection_pool_size(3).concurrent_updates(True).defaults(new_defaults).build()
 
     start_handler = CommandHandler('start', start)
     help_handler = CommandHandler('help', help)
