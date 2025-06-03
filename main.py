@@ -449,7 +449,7 @@ def main(bot_token, admin_id):
 
     new_defaults = Defaults(block=False)
 
-    application = ApplicationBuilder().token(f"{bot_token}").read_timeout(10).write_timeout(10).connect_timeout(10).connection_pool_size(3).concurrent_updates(True).defaults(new_defaults).build()
+    application = ApplicationBuilder().token(f"{bot_token}").post_stop(coroutine_object).read_timeout(10).write_timeout(10).connect_timeout(10).connection_pool_size(3).concurrent_updates(True).defaults(new_defaults).build()
 
     start_handler = CommandHandler('start', start)
     help_handler = CommandHandler('help', help)
@@ -480,7 +480,7 @@ def main(bot_token, admin_id):
 
     print("Informed admin of start.")
 
-    application.post_stop(coroutine_object)  # type: ignore
+    # application.post_stop(coroutine_object)  # type: ignore
 
     print("Set up graceful exit for sigterm")
 
