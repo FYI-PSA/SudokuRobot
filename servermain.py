@@ -433,7 +433,7 @@ def generate_puzzle(diff: int = 0) -> List[List[int]]:
     # then continue with this:
 
     flat_grid = list(map(int, np.zeros(81)))
-
+    solution_checker = Solver(EMPTYGRID)
     base_flat = None
     works = False
     while not works:
@@ -443,7 +443,8 @@ def generate_puzzle(diff: int = 0) -> List[List[int]]:
             random = random * 0.9
             random = int(np.ceil(random * 100) // 10)
             base_flat[10*i] = random
-        works = Solver(back_to_grid(base_flat)).check_valid_grid()
+        solution_checker.set_new_grid(back_to_grid(base_flat))
+        works = solution_checker.check_valid_grid()
     base_scramble = (flat_grid if base_flat is None else base_flat)
 
     test_base_scramble = None
@@ -456,7 +457,8 @@ def generate_puzzle(diff: int = 0) -> List[List[int]]:
             random = int(np.ceil(random * 100) // 10)
             test_base_scramble[8*(i+1)] = random
             # 8*(i+1) and 10*(i) values are magic numbers that give the indices of the main diagonals with i
-        works = Solver(back_to_grid(test_base_scramble)).check_valid_grid()
+        solution_checker.set_new_grid(back_to_grid(test_base_scramble))
+        works = solution_checker.check_valid_grid()
     scrambled_diagonals = (base_scramble if test_base_scramble is None else test_base_scramble)
     grid_scrambled = back_to_grid(scrambled_diagonals)
 
@@ -499,21 +501,20 @@ def generate_puzzle(diff: int = 0) -> List[List[int]]:
     cond = True
     middle = 81 // 2
     count = 1
+    solution_checker.set_new_grid(EMPTYGRID)
     while cond:
         given_indices = indices[:middle+1]
         new_grid = back_to_grid([item if (index in given_indices) else 0 for index, item in enumerate(solved_grid)])
-        tester = Solver(new_grid)
-        possible, count, _ = tester.count_and_solve()
+        solution_checker.set_new_grid(new_grid)
+        possible, count, _ = solution_checker.count_and_solve()
         middle = middle // 2
         if count != 1 or middle == 0:
             cond = False
-        del tester
-        del new_grid
     while count > 1:
         given_indices = indices[:middle+1]
         new_grid = back_to_grid([item if index in given_indices else 0 for index, item in enumerate(solved_grid)])
-        tester = Solver(new_grid)
-        possible, count, _ = tester.count_and_solve()
+        solution_checker.set_new_grid(new_grid)
+        possible, count, _ = solution_checker.count_and_solve()
         if count > 1:
             middle += 1
 
@@ -675,7 +676,7 @@ def puzzle_generator_function_slow(diff: int, index: int, responses: List[Tuple[
     done_flags[index].set()
 
 
-def create_custom_puzzle_thorough(diff: int = 0, maximum_desired_fullness: float | int = 0.5, minimum_desired_fullness: float | int = 0.001, maximum_tries: int = 5, get_min: bool = True) -> List[List[int]]:
+def create_custom_puzzle_limited(diff: int = 0, maximum_desired_fullness: float | int = 0.5, minimum_desired_fullness: float | int = 0.001, maximum_tries: int = 5, get_min: bool = True) -> List[List[int]]:
     target_max_fullness = round(maximum_desired_fullness, 4)
     target_min_fullness = round(minimum_desired_fullness, 4)
     if maximum_desired_fullness >= 1:
@@ -685,8 +686,12 @@ def create_custom_puzzle_thorough(diff: int = 0, maximum_desired_fullness: float
         digits: int = np.ceil(np.log10(target_min_fullness))
         target_min_fullness = round((minimum_desired_fullness / pow(10, digits)), 4)
 
-    assert maximum_desired_fullness > minimum_desired_fullness
-    # Maybe one day I'll replace this with a proper error, but I'm the only user so it's low priority
+    if maximum_desired_fullness < minimum_desired_fullness:
+        # more = minimum_desired_fullness
+        # minimum_desired_fullness = maximum_desired_fullness
+        # maximum_desired_fullness = more
+        # Can't XOR floats, smh
+        minimum_desired_fullness, maximum_desired_fullness = maximum_desired_fullness, minimum_desired_fullness
 
     least_fullness = 1.0
     least_full_found_grid = deepcopy(EMPTYGRID)
@@ -694,10 +699,10 @@ def create_custom_puzzle_thorough(diff: int = 0, maximum_desired_fullness: float
     most_full_found_grid = deepcopy(EMPTYGRID)
     count = 0
 
-    thread_count: int = 2
+    thread_count: int = 3
 
     while count < maximum_tries:
-        print(f"Turn {count+1} of {maximum_tries} attempts...")
+        print(f"Turn {count+1} of {maximum_tries} attempts with {thread_count} threads...")
         st = time.time()
 
         responses: List[Tuple[float, List[List[int]]] | None] = [None] * thread_count
@@ -784,10 +789,10 @@ async def make_puzzle_async(file_name: str, difficulty: str = 'MEDIUM') -> Await
         - Possible Error Line  as  int or None
     """
     # return asyncio.to_thread(make_puzzle_blocking_iterative, file_name, difficulty)
-    return asyncio.to_thread(make_puzzle_blocking_thorough, file_name, difficulty)
+    return asyncio.to_thread(make_puzzle_blocking_limited, file_name, difficulty)
 
 
-def make_puzzle_blocking_thorough(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
+def make_puzzle_blocking_limited(file_name: str, difficulty: str = 'MEDIUM') -> Tuple[List[List[int]], str, str | None, str | None, int | None]:
     """Generates a sudoku puzzle image based on the difficulty and saves it to your `file_name`
     This function is blocking, meaning the rest of your code won't progress until it's done, which takes a few minutes.
 
@@ -813,7 +818,7 @@ def make_puzzle_blocking_thorough(file_name: str, difficulty: str = 'MEDIUM') ->
 
     match difficulty:
         case 'HARD':
-            puzzle_grid = create_custom_puzzle_thorough(
+            puzzle_grid = create_custom_puzzle_limited(
                 diff=0,
                 maximum_desired_fullness=0.4555,
                 minimum_desired_fullness=0.0,
@@ -822,7 +827,7 @@ def make_puzzle_blocking_thorough(file_name: str, difficulty: str = 'MEDIUM') ->
             )
             print('Generating a new HARD puzzle')
         case 'EASY':
-            puzzle_grid = create_custom_puzzle_thorough(
+            puzzle_grid = create_custom_puzzle_limited(
                 diff=8,
                 maximum_desired_fullness=0.77,
                 minimum_desired_fullness=0.59,
@@ -831,7 +836,7 @@ def make_puzzle_blocking_thorough(file_name: str, difficulty: str = 'MEDIUM') ->
             )
             print('Generating a new EASY puzzle')
         case _:
-            puzzle_grid = create_custom_puzzle_thorough(
+            puzzle_grid = create_custom_puzzle_limited(
                 diff=4,
                 maximum_desired_fullness=0.626,
                 minimum_desired_fullness=0.498,
@@ -1103,7 +1108,7 @@ def test() -> None:  # type: ignore
             print("\n")
             print("Generated Puzzle (new):")
         case 'PUZZLE_MORE_EXACT':
-            _puzzle = create_custom_puzzle_thorough(0, 42.5, maximum_tries=7)
+            _puzzle = create_custom_puzzle_limited(0, 42.5, maximum_tries=7)
             _main_grid = deepcopy(_puzzle)
             print("\n")
             print("Generated Puzzle (old):")

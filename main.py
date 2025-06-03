@@ -344,7 +344,7 @@ async def send_generated_modular(update, context, difficulty: str, first_respons
     else:
         captiontext: str = caption
 
-    await context.bot.send_media_group(chat_id=update.effective_chat.id, media=mediagroup, caption=captiontext, reply_to_message_id=update.message.message_id)
+    await context.bot.send_media_group(chat_id=update.effective_chat.id, media=mediagroup, caption=captiontext, parse_mode='HTML', reply_to_message_id=update.message.message_id)
 
     print(f"User: {update.message.from_user.username}   |   File name: {file_name}")
 
@@ -356,7 +356,7 @@ async def send_generated_modular(update, context, difficulty: str, first_respons
 async def send_hard_generated(update, context):
     print('Entering send hard')
     first_response: str = "Generating and sending a difficult puzzle.\nThis process will take up to a minute or two..."
-    caption: str = "Difficulty: **HARD**"
+    caption: str = "Difficulty: <b>HARD</b>"
     difficulty: str = "HARD"
     await send_generated_modular(update=update, context=context, difficulty=difficulty, first_response=first_response, caption=caption)
 
@@ -364,7 +364,7 @@ async def send_hard_generated(update, context):
 async def send_easy_generated(update, context):
     print('Entering send easy')
     first_response: str = "Generating and sending an easy puzzle.\nThis process will take up to a minute or two..."
-    caption: str = "Difficulty: **EASY**"
+    caption: str = "Difficulty: <b>EASY</b>"
     difficulty: str = "EASY"
     await send_generated_modular(update=update, context=context, difficulty=difficulty, first_response=first_response, caption=caption)
 
@@ -372,7 +372,7 @@ async def send_easy_generated(update, context):
 async def send_medium_generated(update, context):
     print('Entering send medium')
     first_response: str = "Generating and sending a medium difficulty puzzle.\nThis process will take up to a minute or two..."
-    caption: str = "Difficulty: **MEDIUM**"
+    caption: str = "Difficulty: <b>MEDIUM</b>"
     difficulty: str = "MEDIUM"
     await send_generated_modular(update=update, context=context, difficulty=difficulty, first_response=first_response, caption=caption)
 
