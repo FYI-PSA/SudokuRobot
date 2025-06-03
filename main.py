@@ -430,7 +430,8 @@ def bot_end_handler(_=None, __=None):
     print('hi')
 
 
-async def coroutine_object(app):
+async def coroutine_object(_app):
+    print('Why does this error in pylance?')
     await asyncio.sleep(1)
     return 'Hi!'
 
@@ -479,7 +480,7 @@ def main(bot_token, admin_id):
 
     print("Informed admin of start.")
 
-    application.post_stop(coroutine_object)
+    application.post_stop(coroutine_object)  # type: ignore
 
     print("Set up graceful exit for sigterm")
 
