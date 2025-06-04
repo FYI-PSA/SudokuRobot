@@ -106,7 +106,7 @@ import time
 from http import HTTPStatus
 from telegram import InputMediaPhoto
 from telegram.error import Conflict
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, Defaults
+from telegram.ext import Application, ApplicationBuilder, CommandHandler, MessageHandler, filters, Defaults
 
 
 def bind_port():
@@ -186,6 +186,33 @@ from tilereader import grayscale_numpy_tiles_list_to_predicted_integer_list as p
 from tilereader import load_model
 AImodel = load_model()
 print('AI model loaded.')
+
+
+def get_bot_token() -> str:
+    try:
+        token = os.getenv('BOT_TOKEN')
+        if token is None:
+            with open('/etc/secrets/BOT_TOKEN.txt', 'rb') as file:
+                token = file.read().decode('utf-8').strip()
+    except (PermissionError, UnicodeDecodeError) as err:
+        raise Exception("Token not found. Either set BOT_TOKEN in environment, or have the BOT_TOKEN.txt file in /etc/secrets/") from err
+    token = str(token).strip()
+    return token
+
+
+def get_admin_id() -> int:
+    try:
+        admin_id = os.getenv('ADMIN_ID')
+        if admin_id is None:
+            with open('/etc/secrets/ADMIN_ID.txt', 'rb') as file:
+                admin_id = file.read().decode('utf-8').strip()
+    except (PermissionError, UnicodeDecodeError) as err:
+        raise Exception("Admin's ID not found. Either set ADMIN_ID in environment, or have the ADMIN_ID.txt file in /etc/secrets/") from err
+    try:
+        admin_id = int(str(admin_id).strip())
+    except ValueError as err:
+        raise Exception("Admin's ID is supposed to be the integer user ID") from err
+    return admin_id
 
 
 async def respond_messages(update, context):
@@ -335,7 +362,7 @@ async def send_generated_modular(update, context, difficulty: str, first_respons
 
     has_more_than_one_solution_flag = False
     # later make it one of the responses of make_puzzle
-    # for now I'm just implementing this to not have to modify this code later
+    # right now it won't happen ever because I'm not using diff < 0
 
     if has_more_than_one_solution_flag:
         captiontext: str = "!"
@@ -353,7 +380,7 @@ async def send_generated_modular(update, context, difficulty: str, first_respons
 
 async def send_hard_generated(update, context):
     print('Entering send hard')
-    first_response: str = "Generating and sending a difficult puzzle.\nThis process will take up to a minute or two..."
+    first_response: str = "Generating and sending a difficult puzzle.\nThis process may take up to 3 minutes..."
     caption: str = "Difficulty: <b>HARD</b>"
     difficulty: str = "HARD"
     await send_generated_modular(update=update, context=context, difficulty=difficulty, first_response=first_response, caption=caption)
@@ -361,7 +388,7 @@ async def send_hard_generated(update, context):
 
 async def send_easy_generated(update, context):
     print('Entering send easy')
-    first_response: str = "Generating and sending an easy puzzle.\nThis process will take up to a minute or two..."
+    first_response: str = "Generating and sending an easy puzzle.\nThis process may take up to 3 minutes..."
     caption: str = "Difficulty: <b>EASY</b>"
     difficulty: str = "EASY"
     await send_generated_modular(update=update, context=context, difficulty=difficulty, first_response=first_response, caption=caption)
@@ -369,7 +396,7 @@ async def send_easy_generated(update, context):
 
 async def send_medium_generated(update, context):
     print('Entering send medium')
-    first_response: str = "Generating and sending a medium difficulty puzzle.\nThis process will take up to a minute or two..."
+    first_response: str = "Generating and sending a medium difficulty puzzle.\nThis process may take up to 3 minutes..."
     caption: str = "Difficulty: <b>MEDIUM</b>"
     difficulty: str = "MEDIUM"
     await send_generated_modular(update=update, context=context, difficulty=difficulty, first_response=first_response, caption=caption)
@@ -412,31 +439,25 @@ def get_or_create_eventloop() -> asyncio.AbstractEventLoop:
         return current_loop
 
 
-async def notify_start(app, admin_id: int) -> None:
-    await app.bot.send_message(chat_id=admin_id, text="The bot has started!")
+async def notify_start(app: Application) -> None:
+    await app.bot.send_message(get_admin_id(), text="The bot has started!")
 
 
-async def notify_end(app, admin_id: int) -> None:
-    await app.bot.send_message(chat_id=admin_id, text="The bot is shutting down.")
+async def notify_end(app: Application) -> None:
+    await app.bot.send_message(get_admin_id(), text="The bot is shutting down.")
 
 
-async def bot_end_handler_async(app) -> None:
-    await notify_end(app, 10)
-    print("Ending the program, bot_end_handler did it's job.")
+async def init_handler(app: Application) -> None:
+    await notify_start(app)
+    print("Informed admin of start.")
 
 
-def bot_end_handler(_=None, __=None):
-    # asyncio.run(bot_end_handler_async(app))
-    print('hi')
+async def stop_handler(app: Application):
+    await notify_end(app)
+    print("Informed admin of shutdown")
 
 
-async def coroutine_object(_app):
-    print('Why does this error in Pylance?')
-    await asyncio.sleep(1)
-    return 'Hi!'
-
-
-def main(bot_token, admin_id):
+def main():
     global stop_listening
     time.sleep(0.5)
     print("Main is now working!")
@@ -449,7 +470,18 @@ def main(bot_token, admin_id):
 
     new_defaults = Defaults(block=False)
 
-    application = ApplicationBuilder().token(f"{bot_token}").read_timeout(10).write_timeout(10).connect_timeout(10).connection_pool_size(3).concurrent_updates(True).defaults(new_defaults).build()
+    application: Application = (
+        ApplicationBuilder()
+        .token(get_bot_token())
+        .read_timeout(10)
+        .write_timeout(10)
+        .connect_timeout(10)
+        .connection_pool_size(10)  # Handle 10 connections at once
+        .concurrent_updates(True)
+        .defaults(new_defaults)
+        .post_init(init_handler)
+        .post_stop(stop_handler)
+        ).build()
 
     start_handler = CommandHandler('start', start)
     help_handler = CommandHandler('help', help)
@@ -476,58 +508,22 @@ def main(bot_token, admin_id):
 
     event_loop = get_or_create_eventloop()
 
-    event_loop.run_until_complete(notify_start(application, admin_id))
-
-    print("Informed admin of start.")
-
-    application.post_stop(coroutine_object)  # type: ignore
-
-    print("Set up graceful exit for sigterm")
-
     application.run_polling()
 
     print("Mainloooop... dying... terminated...")
-    print("Informed admin of shutdown.")
     try:
         event_loop.stop()
     except RuntimeError:
+        # Means it's already dead.
         pass
     stop_listening = True
     sock_listener_thread.join()
-    # return
 
 
 if __name__ == '__main__':
     try:
-        _token = os.getenv('BOT_TOKEN')  # github secrets
-        _admin_id = os.getenv('ADMIN_ID')
-        if _token is None:
-            with open('/etc/secrets/BOT_TOKEN.txt', 'rb') as file:  # render secrets
-                _token = file.read().decode('utf-8').strip()
-        if _admin_id is None:
-            with open('/etc/secrets/ADMIN_ID.txt', 'rb') as file:  # this one is less secret and more to avoid hard coding
-                _admin_id = file.read().decode('utf-8').strip()
-    except (PermissionError, UnicodeDecodeError) as err:
-        raise Exception("Token or Admin's ID not found. Either set BOT_TOKEN / ADMIN_ID in environment, or have the BOT_TOKEN.txt or ADMIN_ID.txt file in /etc/secrets/") from err
-
-    try:
-        ADMIN_ID = int(str(_admin_id).strip())
-        TOKEN = str(_token).strip()
-    except ValueError as err:
-        raise Exception("Wrong type!! Admin's ID is supposed to be the integer user ID") from err
-
-    del _token
-    del _admin_id
-
-    try:
-        main(TOKEN, ADMIN_ID)
+        main()
         print("Mainloop looped.")
-        if FILE in os.listdir(LOCK):
-            os.remove(KEY)
-            print("Removed file lock")
-        else:
-            print("No lock while quitting.")
-        logging.shutdown()
         sys.exit(0)
     except Exception as e:
         print("Generic exception? I don't know how to handle that.")

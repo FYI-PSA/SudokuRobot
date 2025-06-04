@@ -651,12 +651,18 @@ def servermain(filename, ai_model, predict_grayscale_func) -> Tuple[bool, str, s
 
     try:
         write_grid_to_grid_picture(solved_tiles, filename, solved_name, grid_name)
+    except ValueError as err:
+        error_message = "The square in the image was incorrectly identified"
+        error_name = type(err).__name__
+        last_event = sys.exc_info()[-1]
+        error_line = (-1 if last_event is None else last_event.tb_lineno)
     except Exception as err:
-        print('write to file failed with an error')
         error_message = str(err)
         error_name = type(err).__name__
         last_event = sys.exc_info()[-1]
         error_line = (-1 if last_event is None else last_event.tb_lineno)
+    finally:
+        print('write to file failed with an error')
 
     print('going home...')
     return (solved_status, grid_name, solved_name, returned_grid, error_message, error_name, error_line)
@@ -818,32 +824,32 @@ def make_puzzle_blocking_limited(file_name: str, difficulty: str = 'MEDIUM') -> 
 
     match difficulty:
         case 'HARD':
+            print('Generating a new HARD puzzle')
             puzzle_grid = create_custom_puzzle_limited(
                 diff=0,
-                maximum_desired_fullness=0.4555,
-                minimum_desired_fullness=0.0,
+                maximum_desired_fullness=0.45555,
+                minimum_desired_fullness=0.00001,
                 maximum_tries=3,
                 get_min=True
             )
-            print('Generating a new HARD puzzle')
         case 'EASY':
-            puzzle_grid = create_custom_puzzle_limited(
-                diff=8,
-                maximum_desired_fullness=0.77,
-                minimum_desired_fullness=0.59,
-                maximum_tries=3,
-                get_min=False
-            )
             print('Generating a new EASY puzzle')
-        case _:
             puzzle_grid = create_custom_puzzle_limited(
-                diff=4,
-                maximum_desired_fullness=0.626,
-                minimum_desired_fullness=0.498,
+                diff=9,
+                maximum_desired_fullness=0.819,
+                minimum_desired_fullness=0.669,
                 maximum_tries=3,
                 get_min=False
             )
+        case _:
             print('Generating a new MEDIUM puzzle')
+            puzzle_grid = create_custom_puzzle_limited(
+                diff=5,
+                maximum_desired_fullness=0.759,
+                minimum_desired_fullness=0.499,
+                maximum_tries=3,
+                get_min=False
+            )
 
     gc.collect()
     puzzle_tiles = grid_to_list(puzzle_grid)

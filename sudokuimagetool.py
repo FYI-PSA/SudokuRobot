@@ -556,12 +556,22 @@ def write_solved_grid_to_original_image(new_file_name: str, largest_square: tupl
 
     solved_grid_np = np.asarray(deepcopy(solved_grid), dtype=np.uint8).copy()
     solved_image_np = np.asarray(deepcopy(org_rgb_image), dtype=np.uint8).copy()
-    solved_image_np[y:y+h, x:x+w] = solved_grid_np
-
-    solved_image = Image.fromarray(solved_image_np)
-    solved_image.save(new_file_name)
-    gc.collect()
-    return deepcopy(solved_image)
+    max_size = np.shape(solved_image_np)
+    c_size = np.shape(solved_grid_np)
+    if (c_size[0]) > (max_size[0]) or (c_size[1]) > (max_size[1]):
+        raise ValueError(f"Could not broadcast input array from shape ({c_size[0]},{c_size[1]},{c_size[2]}) into shape ({max_size[0]},{max_size[1]},{max_size[2]})")
+    if (c_size[0]+h) > (max_size[0]+1):
+        h = max_size[0]+1-c_size[0]
+    if (c_size[1]+w) > (max_size[1]+1):
+        w = max_size[1]+1-c_size[1]
+    try:
+        solved_image_np[y:y+h, x:x+w] = solved_grid_np
+        solved_image = Image.fromarray(solved_image_np)
+        solved_image.save(new_file_name)
+        gc.collect()
+        return deepcopy(solved_image)
+    except ValueError as error:
+        raise ValueError(f"Could not broadcast input array from shape ({c_size[0]},{c_size[1]},{c_size[2]}) into shape ({max_size[0]},{max_size[1]},{max_size[2]})") from error
 
 
 def main() -> None:
