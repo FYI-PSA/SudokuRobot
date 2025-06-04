@@ -387,7 +387,8 @@ def generate_grid(tiles: List[int], size: tuple, mostly_black: bool = False) -> 
         image = ImageOps.expand(image, border=border_thick*12, fill=(255, 255, 255))  # type: ignore
         # this is a cool pattern but it looks freaky so i'll remove it.
         if not checked_side:
-            side = image.width + 10
+            # side = image.width + 10
+            side = image.width + 5
             checked_side = True
         picture_dictionary.update({key: image})
 
@@ -459,7 +460,8 @@ def generate_grid(tiles: List[int], size: tuple, mostly_black: bool = False) -> 
 
 
 def write_new_grid_to_new_image(new_file_name: str, tile_list: List[int]) -> None:
-    grid_size = (1024, 1024)
+    # grid_size = (1024, 1024)
+    grid_size = (768, 768)
     # grid_size = (512, 512)
     new_image = generate_grid(tile_list, grid_size, False)
     new_image.save(new_file_name)

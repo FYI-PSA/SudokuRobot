@@ -3,9 +3,10 @@ from PIL.ImageOps import invert
 
 # IMG_SIZE = 512  # Too large
 # IMG_SIZE = 216  # Still a bit too much
-# IMG_SIZE = 128  # A bit too small
+IMG_SIZE = 128  # A bit too small
 # IMG_SIZE = 171  # Average of 216 and 128
-IMG_SIZE = 162  # 81 * 2
+# IMG_SIZE = 162  # 9 * 9 * 2
+# IMG_SIZE = 126  # 9 * 7 * 2
 
 # black (value of 0)
 # grayscale image (1 channel)
