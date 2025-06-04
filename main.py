@@ -323,10 +323,10 @@ async def send_generated_modular(update, context, difficulty: str, first_respons
     print('Sent message.')
     files = os.listdir()
     file_counter = 0
-    file_name = f"puzzle_hard_{file_counter}.png"
+    file_name = f"puzzle_{difficulty.lower()}_{file_counter}.png"
     while file_name in files:
         file_counter += 1
-        file_name = f"puzzle_hard_{file_counter}.png"
+        file_name = f"puzzle_{difficulty.lower()}_{file_counter}.png"
     with open(file_name, 'wb') as temp_write_file:
         temp_write_file.write(b'\x00')
     gc.collect()
