@@ -568,17 +568,18 @@ def servermain(filename, ai_model, predict_grayscale_func) -> Tuple[bool, str, s
     print(f"name: {name} |  ext: {ext} |  grid_name: {grid_name} |  solved_name: {solved_name}")
 
     solved_status = True
+
     error_message, error_name, error_line = None, None, None
 
     try:
         count_of_solutions, returned_grid = main(model=ai_model, filename=filename, predict_grayscale_func=predict_grayscale_func)
-        print("got a result")
+        print("Got a result")
     except Exception as err_message:
-        print("got an error")
+        print("Got an error")
         print(err_message)
         last_event = sys.exc_info()[-1]
         error_line = (-1 if last_event is None else last_event.tb_lineno)
-        print(f'error line: {error_line}')
+        print(f"Error line: {error_line}")
         sys.exit(1)
         # return (False, grid_name, solved_name, deepcopy(EMPTYGRID), str(err_message), type(err_message).__name__, sys.exc_info()[-1].tb_lineno)
         # RETURN THIS AGAIN IF YOU REMOVE THE EXIT(1)
@@ -605,13 +606,13 @@ def servermain(filename, ai_model, predict_grayscale_func) -> Tuple[bool, str, s
     # put these two in elif, because the lack of solutions is more important
     # (even though count_of_solutions should still be 0 and thus wouldn't cause problems)
     elif 1 < count_of_solutions <= 100:
-        print("got a bunch of results but it's not more than a hundred")
+        print("Got a bunch of results; but it's not more than a hundred")
         error_message = "The puzzle didn't have a unique solutions"
         error_name = "Solutions not unique"
         frame = currentframe()
         error_line = getframeinfo(frame).lineno if frame else 644
     elif count_of_solutions > 100:
-        print("got too many solutions")
+        print("Got too many solutions!")
         # count_of_solutions = 101  # I'm 99% sure with the new code, it already is 101.
         error_message = "This puzzle has at least 100 solutions!"
         error_name = "Too many solutions"
@@ -625,17 +626,17 @@ def servermain(filename, ai_model, predict_grayscale_func) -> Tuple[bool, str, s
     try:
         write_grid_to_grid_picture(solved_tiles, filename, solved_name, grid_name)
     except ValueError as err:
+        print("Write to file failed with ValueError")
         error_message = "The square in the image was incorrectly identified"
         error_name = type(err).__name__
         last_event = sys.exc_info()[-1]
         error_line = (-1 if last_event is None else last_event.tb_lineno)
-        print("Write to file failed with ValueError")
     except Exception as err:
+        print("write to file failed with a generic error")
         error_message = str(err)
         error_name = type(err).__name__
         last_event = sys.exc_info()[-1]
         error_line = (-1 if last_event is None else last_event.tb_lineno)
-        print("write to file failed with a generic error")
 
     print("Going home...")
     return (solved_status, grid_name, solved_name, returned_grid, error_message, error_name, error_line)
@@ -813,13 +814,14 @@ def make_puzzle_blocking_limited(file_name: str, difficulty: str = 'MEDIUM') -> 
 
     gc.collect()
     puzzle_tiles = grid_to_list(puzzle_grid)
-    print(f'dissolved grid to {puzzle_tiles}')
+    print(f"Dissolved the grid to {puzzle_tiles}")
 
     error_message, error_name, error_line = None, None, None
+
     try:
         write_puzzle_to_image(puzzle_tiles, filename)
     except Exception as err:
-        print('write to file failed with an error')
+        print("Write to file failed with a generic error")
         error_message = str(err)
         error_name = type(err).__name__
         last_event = sys.exc_info()[-1]
@@ -906,7 +908,7 @@ def generate_puzzle_with_restrictions(diff: int = 0, minimum_required_fill: floa
     random = int(np.floor(random*100*count) / 100)
 
     if not (-1 < random < count):
-        print('Random is choosing incorrectly?')
+        print("Random is choosing incorrectly?")
         random = random % count
 
     # print(f"Out of {count} possible grids, #{random} was chosen.")
@@ -959,6 +961,11 @@ def generate_puzzle_with_restrictions(diff: int = 0, minimum_required_fill: floa
 def create_custom_puzzle_iterative(diff: int = 0, maximum_desired_fullness: float | int = 0.5, minimum_desired_fullness: float | int = 0.001, maximum_tries: int = 5) -> List[List[int]]:
     target_max_fullness = round(maximum_desired_fullness, 4)
     target_min_fullness = round(minimum_desired_fullness, 4)
+
+    # TODO:
+    # Implement the limit as an actual limit
+    # Implement the list and sorting feature to pick out the least and most
+    # Instead of looking for least or for most, look for the closest to the average of target_max and target_min
 
     if target_max_fullness >= 1:
         digits: int = np.ceil(np.log10(target_max_fullness))
@@ -1039,13 +1046,14 @@ def make_puzzle_blocking_iterative(file_name: str, difficulty: str = 'MEDIUM') -
 
     gc.collect()
     puzzle_tiles = grid_to_list(puzzle_grid)
-    print(f'dissolved grid to {puzzle_tiles}')
+    print(f"Dissolved grid to {puzzle_tiles}")
 
     error_message, error_name, error_line = None, None, None
+
     try:
         write_puzzle_to_image(puzzle_tiles, filename)
     except Exception as err:
-        print('write to file failed with an error')
+        print("Write to file failed with an error")
         error_message = str(err)
         error_name = type(err).__name__
         last_event = sys.exc_info()[-1]
