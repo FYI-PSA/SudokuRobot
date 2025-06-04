@@ -37,8 +37,9 @@ def proper_logging(info) -> None:
 print = proper_logging
 
 
-import os
 import gc
+import os
+
 import psutil
 
 print("NUCLEAR MODE. WILL KILL ANY OTHER RUNNING PYTHON INSTANCE.")
@@ -102,11 +103,12 @@ import asyncio
 import socket
 import threading
 import time
-
 from http import HTTPStatus
+
 from telegram import InputMediaPhoto
 from telegram.error import Conflict
-from telegram.ext import Application, ApplicationBuilder, CommandHandler, MessageHandler, filters, Defaults
+from telegram.ext import (Application, ApplicationBuilder, CommandHandler,
+                          Defaults, MessageHandler, filters)
 
 
 def bind_port():
@@ -133,7 +135,7 @@ def sock_listener(sock):
     # apparently ._closed is private so it most likely won't work how I expect it to.
     while not stop_listening:
         sock.listen(10)
-        connection, address = sock.accept()  # pylint: disable=W0612
+        connection, _address = sock.accept()  # pylint: disable=W0612
         with connection:
             # print(f'Received connection by {address}')
             # data = connection.recv(1024).decode('utf-8')
@@ -182,8 +184,11 @@ async def help(update, context):
 
 print('importing the heart of the project including Keras, which will take a while...')
 import servermain
-from tilereader import grayscale_numpy_tiles_list_to_predicted_integer_list as predict_grayscale_func
+from tilereader import \
+    grayscale_numpy_tiles_list_to_predicted_integer_list as \
+    predict_grayscale_func
 from tilereader import load_model
+
 AImodel = load_model()
 print('AI model loaded.')
 

@@ -6,9 +6,9 @@ import sys
 import threading
 import time
 from collections import Counter
-# from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
-from typing import List, Tuple, Awaitable
+from inspect import currentframe, getframeinfo
+from typing import Awaitable, List, Tuple
 
 import numpy as np
 
@@ -630,24 +630,27 @@ def servermain(filename, ai_model, predict_grayscale_func) -> Tuple[bool, str, s
         solved_status = False
         error_message = str(err_message_html)
         error_name = 'CouldNotBeSolved'
-        error_line = 589
+        frame = currentframe()
+        error_line = getframeinfo(frame).lineno if frame else 636
     # put these two in elif, because the lack of solutions is more important
     # (even though count_of_solutions should still be 0 and thus wouldn't cause problems)
     elif 1 < count_of_solutions <= 100:
         print("got a bunch of results but it's not more than a hundred")
         error_message = "The puzzle didn't have a unique solutions"
         error_name = "Solutions not unique"
-        error_line = 596
+        frame = currentframe()
+        error_line = getframeinfo(frame).lineno if frame else 644
     elif count_of_solutions > 100:
         print("got too many solutions")
         # count_of_solutions = 101  # I'm 99% sure with the new code, it already is 101.
         error_message = "This puzzle has at least 100 solutions!"
         error_name = "Too many solutions"
-        error_line = 602
+        frame = currentframe()
+        error_line = getframeinfo(frame).lineno if frame else 651
 
     gc.collect()
     solved_tiles = grid_to_list(returned_grid)
-    print(f'dissolved grid to {solved_tiles}')
+    print(f"Dissolved the grid to {solved_tiles}")
 
     try:
         write_grid_to_grid_picture(solved_tiles, filename, solved_name, grid_name)
@@ -656,15 +659,15 @@ def servermain(filename, ai_model, predict_grayscale_func) -> Tuple[bool, str, s
         error_name = type(err).__name__
         last_event = sys.exc_info()[-1]
         error_line = (-1 if last_event is None else last_event.tb_lineno)
-        print('write to file failed with ValueError')
+        print("Write to file failed with ValueError")
     except Exception as err:
         error_message = str(err)
         error_name = type(err).__name__
         last_event = sys.exc_info()[-1]
         error_line = (-1 if last_event is None else last_event.tb_lineno)
-        print('write to file failed with a generic error')
+        print("write to file failed with a generic error")
 
-    print('going home...')
+    print("Going home...")
     return (solved_status, grid_name, solved_name, returned_grid, error_message, error_name, error_line)
     # return value:
     # successful as a boolean, name of solved grid file as a string, name of solved full image file as a string, completed or not grid as 9 lists of 9 numbers in a list, error message as a string, error name as a string, error line as an int
@@ -705,7 +708,7 @@ def create_custom_puzzle_limited(diff: int = 0, maximum_desired_fullness: float 
     most_full_found_grid = deepcopy(EMPTYGRID)
     count = 0
 
-    thread_count: int = 3
+    thread_count: int = 2
 
     while count < maximum_tries:
         print(f"Turn {count+1} of {maximum_tries} attempts with {thread_count} threads...")
