@@ -1,41 +1,9 @@
 #  the more higher level stuff starts at line 70 ish
-import logging
 import sys
 
-logging_format: str = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+from log_man import give_me_loggers
 
-logging.basicConfig(
-    format=logging_format,
-    level=logging.INFO
-)
-
-formatter = logging.Formatter(logging_format)
-
-root_logger = logging.getLogger()
-root_logger.setLevel(logging.INFO)
-
-logging.getLogger("httpx").setLevel(logging.WARNING)
-
-# if for some reason it doesn't work with stdout
-# uncomment this:
-
-# stdout_handler = logging.StreamHandler(sys.stdout)
-# stdout_handler.setLevel(logging.INFO)
-# stdout_handler.setFormatter(formatter)
-# root_logger.addHandler(stdout_handler)
-
-
-def proper_logging(info) -> None:
-    logging.info(info)
-    logging.getLogger().handlers[0].flush()
-    # I KNOW THIS IS BAD
-    # BUT IT FLUSHES LATE, AND THAT'S ANNOYING.
-    # for handler in logging.getLogger().handlers:
-    #     handler.flush()
-
-
-print = proper_logging
-
+print, print_error, shutdown_logging = give_me_loggers()
 
 import gc
 import os
@@ -90,7 +58,7 @@ def exit_handler() -> None:
         print("Removed file lock")
     else:
         print("No lock while quitting.")
-    logging.shutdown()
+    shutdown_logging()
 
 
 atexit.register(exit_handler)
@@ -422,8 +390,8 @@ async def error_handler(update, context):  # pylint: disable=W0613
         await asyncio.sleep(7.5)
         print("Is the conflict persisting after this?\n")
     else:
-        logging.info('\n\n')
-        logging.error(f"An unexpected exception, you should investigate: {err}")
+        print('\n\n')
+        print_error(f"An unexpected exception, you should investigate: {err}")
         error = sys.exc_info()[-1]
         if error is None:
             print("Was not a exception from the code apparently.")

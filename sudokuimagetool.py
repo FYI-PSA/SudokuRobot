@@ -1,5 +1,4 @@
 import gc
-import logging
 from copy import deepcopy
 from typing import List, Tuple
 
@@ -7,39 +6,12 @@ import cv2
 import numpy as np
 from PIL import Image, ImageOps
 
+from log_man import give_me_loggers
+
 # from matplotlib import pyplot as plt
 
-logging_format: str = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
-logging.basicConfig(
-    format=logging_format,
-    level=logging.INFO
-)
-
-formatter = logging.Formatter(logging_format)
-
-root_logger = logging.getLogger()
-root_logger.setLevel(logging.INFO)
-
-# if for some reason it doesn't work with stdout
-# uncomment this:
-
-# stdout_handler = logging.StreamHandler(sys.stdout)
-# stdout_handler.setLevel(logging.INFO)
-# stdout_handler.setFormatter(formatter)
-# root_logger.addHandler(stdout_handler)
-
-
-def proper_logging(info) -> None:
-    logging.info(info)
-    logging.getLogger().handlers[0].flush()
-    # I KNOW THIS IS BAD
-    # BUT IT FLUSHES LATE, AND THAT'S ANNOYING.
-    # for handler in logging.getLogger().handlers:
-    #     handler.flush()
-
-
-print = proper_logging
+print, _print_error, _shutdown_logging = give_me_loggers()
 
 
 class Plot():
