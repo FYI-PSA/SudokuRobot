@@ -285,6 +285,7 @@ async def process_image(update, context):
         await context.bot.send_message(chat_id=update.effective_chat.id, text=response, reply_to_message_id=update.message.message_id)
         gridstr = servermain.gridstring(solved_grid)
         print(gridstr)
+        print(f"User: {update.message.from_user.username}   |   Failed: {possible_err_name}: {possible_err_line} : {possible_err_details}")
         await context.bot.send_message(chat_id=update.effective_chat.id, text=gridstr, reply_to_message_id=update.message.message_id)
         return
     else:
