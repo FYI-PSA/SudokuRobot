@@ -656,13 +656,13 @@ def servermain(filename, ai_model, predict_grayscale_func) -> Tuple[bool, str, s
         error_name = type(err).__name__
         last_event = sys.exc_info()[-1]
         error_line = (-1 if last_event is None else last_event.tb_lineno)
+        print('write to file failed with ValueError')
     except Exception as err:
         error_message = str(err)
         error_name = type(err).__name__
         last_event = sys.exc_info()[-1]
         error_line = (-1 if last_event is None else last_event.tb_lineno)
-    finally:
-        print('write to file failed with an error')
+        print('write to file failed with a generic error')
 
     print('going home...')
     return (solved_status, grid_name, solved_name, returned_grid, error_message, error_name, error_line)
